@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".AppointmentActivity">
+
+
+   <fragment
+       android:id="@+id/autocomplete_fragment1"
+       android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"
+       android:layout_width="219dp"
+       android:layout_height="27dp"
+       android:layout_marginStart="16dp"
+       android:layout_marginTop="56dp"
+       android:layout_marginEnd="16dp"
+       app:layout_constraintEnd_toEndOf="parent"
+       app:layout_constraintHorizontal_bias="1.0"
+       app:layout_constraintStart_toStartOf="parent"
+       app:layout_constraintTop_toBottomOf="@+id/editTextTime" />
+
+   <TextView
+       android:id="@+id/textViewPickupLocation"
+       android:layout_width="47dp"
+       android:layout_height="23dp"
+       android:layout_marginStart="16dp"
+       android:layout_marginTop="64dp"
+       android:text="Pickup "
+       app:layout_constraintEnd_toStartOf="@+id/autocomplete_fragment1"
+       app:layout_constraintHorizontal_bias="0.504"
+       app:layout_constraintStart_toStartOf="parent"
+       app:layout_constraintTop_toBottomOf="@+id/textViewTime" />
+
+   <TextView
+       android:id="@+id/textViewDestination"
+       android:layout_width="wrap_content"
+       android:layout_height="wrap_content"
+       android:layout_marginStart="8dp"
+       android:layout_marginTop="72dp"
+       android:text="Destination"
+       app:layout_constraintEnd_toStartOf="@+id/autocomplete_fragment2"
+       app:layout_constraintHorizontal_bias="0.556"
+       app:layout_constraintStart_toStartOf="parent"
+       app:layout_constraintTop_toBottomOf="@+id/textViewPickupLocation" />
+
+   <fragment
+       android:id="@+id/autocomplete_fragment2"
+       android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"
+       android:layout_width="219dp"
+       android:layout_height="27dp"
+       android:layout_marginStart="16dp"
+       android:layout_marginTop="72dp"
+       android:layout_marginEnd="16dp"
+       app:layout_constraintEnd_toEndOf="parent"
+       app:layout_constraintHorizontal_bias="1.0"
+       app:layout_constraintStart_toStartOf="parent"
+       app:layout_constraintTop_toBottomOf="@+id/autocomplete_fragment1" />
+
+   <Button
+       android:id="@+id/btnSubmit"
+       android:layout_width="wrap_content"
+       android:layout_height="wrap_content"
+       android:onClick="submitBtnOnClick"
+       android:text="Submit "
+       app:layout_constraintBottom_toBottomOf="parent"
+       app:layout_constraintEnd_toEndOf="parent"
+       app:layout_constraintHorizontal_bias="0.471"
+       app:layout_constraintStart_toStartOf="parent"
+       app:layout_constraintTop_toBottomOf="@+id/autocomplete_fragment2"
+       app:layout_constraintVertical_bias="0.379" />
+
+   <TextView
+       android:id="@+id/textView2Test"
+       android:layout_width="271dp"
+       android:layout_height="27dp"
+       android:layout_marginStart="8dp"
+       android:autoText="true"
+       android:text="TextView"
+       android:textSize="8sp"
+       app:layout_constraintBottom_toTopOf="@+id/autocomplete_fragment1"
+       app:layout_constraintEnd_toEndOf="parent"
+       app:layout_constraintHorizontal_bias="0.0"
+       app:layout_constraintStart_toStartOf="parent"
+       app:layout_constraintTop_toTopOf="parent"
+       app:layout_constraintVertical_bias="0.163" />
+
+   <EditText
+       android:id="@+id/editTextTime"
+       android:layout_width="207dp"
+       android:layout_height="43dp"
+       android:layout_marginTop="40dp"
+       android:ems="10"
+       android:inputType="time"
+       app:layout_constraintEnd_toEndOf="parent"
+       app:layout_constraintHorizontal_bias="0.843"
+       app:layout_constraintStart_toStartOf="parent"
+       app:layout_constraintTop_toBottomOf="@+id/editTextDate" />
+
+   <EditText
+       android:id="@+id/editTextDate"
+       android:layout_width="203dp"
+       android:layout_height="44dp"
+       android:layout_marginTop="28dp"
+       android:digits="0123456789/"
+       android:ems="10"
+       android:hint="00/00/0000"
+       android:inputType="date"
+       app:layout_constraintEnd_toEndOf="parent"
+       app:layout_constraintHorizontal_bias="0.826"
+       app:layout_constraintStart_toStartOf="parent"
+       app:layout_constraintTop_toBottomOf="@+id/editTextTextPersonName" />
+
+   <EditText
+       android:id="@+id/editTextTextPersonName"
+       android:layout_width="201dp"
+       android:layout_height="50dp"
+       android:layout_marginTop="80dp"
+       android:ems="10"
+       android:inputType="textPersonName"
+       app:layout_constraintEnd_toEndOf="parent"
+       app:layout_constraintHorizontal_bias="0.819"
+       app:layout_constraintStart_toStartOf="parent"
+       app:layout_constraintTop_toTopOf="parent" />
+
+   <TextView
+       android:id="@+id/textViewName"
+       android:layout_width="wrap_content"
+       android:layout_height="wrap_content"
+       android:layout_marginTop="100dp"
+       android:text="Name"
+       app:layout_constraintEnd_toStartOf="@+id/editTextTextPersonName"
+       app:layout_constraintHorizontal_bias="0.585"
+       app:layout_constraintStart_toStartOf="parent"
+       app:layout_constraintTop_toTopOf="parent" />
+
+   <TextView
+       android:id="@+id/textViewDate"
+       android:layout_width="wrap_content"
+       android:layout_height="wrap_content"
+       android:layout_marginTop="56dp"
+       android:text="Date"
+       app:layout_constraintEnd_toStartOf="@+id/editTextDate"
+       app:layout_constraintHorizontal_bias="0.573"
+       app:layout_constraintStart_toStartOf="parent"
+       app:layout_constraintTop_toBottomOf="@+id/textViewName" />
+
+   <TextView
+       android:id="@+id/textViewTime"
+       android:layout_width="wrap_content"
+       android:layout_height="wrap_content"
+       android:layout_marginTop="68dp"
+       android:text="Time"
+       app:layout_constraintEnd_toStartOf="@+id/editTextTime"
+       app:layout_constraintHorizontal_bias="0.56"
+       app:layout_constraintStart_toStartOf="parent"
+       app:layout_constraintTop_toBottomOf="@+id/textViewDate" />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+
+
