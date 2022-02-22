@@ -10,7 +10,7 @@
     <Button
         android:id="@+id/button_first"
         android:layout_width="184dp"
-        android:layout_height="43dp"
+        android:layout_height="48dp"
         android:layout_marginBottom="108dp"
         android:onClick="btnplaces"
         android:text="Appointment"
@@ -23,7 +23,7 @@
     <Button
         android:id="@+id/appointmentViewerBtn"
         android:layout_width="184dp"
-        android:layout_height="43dp"
+        android:layout_height="48dp"
         android:layout_marginBottom="268dp"
         android:text="Calender"
         app:layout_constraintBottom_toBottomOf="parent"
