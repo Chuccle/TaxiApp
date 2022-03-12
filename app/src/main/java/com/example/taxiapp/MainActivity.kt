@@ -48,7 +48,7 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
 
         // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
+        // automatically handle clicks on the Home/Up btnDatePicker, so long
         // as you specify a parent activity in AndroidManifest.xml.
         return when (item.itemId) {
             R.id.action_settings -> true

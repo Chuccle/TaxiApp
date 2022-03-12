@@ -2,6 +2,8 @@ package com.example.taxiapp
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.Intent
@@ -27,7 +29,7 @@ import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
 import com.google.gson.Gson
-
+import java.util.*
 
 data class DistanceMatrixRoot(
 
@@ -78,10 +80,6 @@ class AppointmentActivity : AppCompatActivity() {
 
     var clientname: String? = null
 
-    var date: String? = null
-
-    var time: String? = null
-
     var pickupID: String? = null
 
     var pickup: String? = null
@@ -89,6 +87,7 @@ class AppointmentActivity : AppCompatActivity() {
     var destinationID: String? = null
 
     var destination: String? = null
+
 
     private lateinit var binding: ActivityAppointmentBinding
 
@@ -104,7 +103,7 @@ class AppointmentActivity : AppCompatActivity() {
 
 
 
-        Places.initialize(applicationContext,"AIzaSyCgqQfyspQQ-cq-enAKgCQPmVkSb1bcLjM")
+        Places.initialize(applicationContext, "AIzaSyCgqQfyspQQ-cq-enAKgCQPmVkSb1bcLjM")
 
         // Create a new PlacesClient instance
         Places.createClient(this)
@@ -114,7 +113,107 @@ class AppointmentActivity : AppCompatActivity() {
         autocompleteLogic(R.id.autocomplete_fragment2)
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
+        // val filter =
+        //  InputFilter { source, start, end, dest, dstart, dend ->
+        //      for (i in start until end) {
+        //
+        //
+        //           when (source[i]) {
+        //              '/'->  null
+        //              '0'->  null
+        //              '1'->  null
+        //              '2'->  null
+        //              '3'->  null
+        //              '4'->  null
+        //              '5'->  null
+        //              '6'->  null
+        //              '7'->  null
+        //              '8'->  null
+        //              '9'->  null
+        //             else -> { // Note the block
+        //                  return@InputFilter ""
+        //         }
+        //     }
+        //
+        //      if (i == 1) {
+        //        return@InputFilter '/'.toString()
+        //      }
+        //
+        //    }
+        //     null
+        //   }
+        //  binding.editTextDate.filters = arrayOf(filter)
+
+        binding.btnDatePicker.setOnClickListener {
+
+            val calendar = Calendar.getInstance()
+            val year = calendar.get(Calendar.YEAR)
+            val month = calendar.get(Calendar.MONTH)
+            val day = calendar.get(Calendar.DAY_OF_MONTH)
+
+            DatePickerDialog(
+                this,
+                { view, year, monthOfYear, dayOfMonth ->
+                    binding.textViewDateField.text =
+                        "" + dayOfMonth + "/" + (monthOfYear + 1) + "/" + year
+                }, year, month, day
+            )
+                .show()
+        }
+
+        binding.btnTimePicker.setOnClickListener {
+
+            val calendar = Calendar.getInstance()
+
+            TimePickerDialog(
+                // pass the Context
+                this,
+                // listener to perform task
+                // when time is picked
+                timePickerDialogListener,
+                // default hour when the time picker
+                // dialog is opened
+                calendar.get(Calendar.HOUR_OF_DAY),
+                // default minute when the time picker
+                // dialog is opened
+                calendar.get(Calendar.MINUTE),
+                // 24 hours time picker is
+                // true
+                true
+            )
+
+                .show()
+        }
+
     }
+
+
+    // listener which is triggered when the
+    // time is picked from the time picker dialog
+    private val timePickerDialogListener: TimePickerDialog.OnTimeSetListener =
+        TimePickerDialog.OnTimeSetListener { view, hourOfDay, minute ->
+            binding.textViewTimeField.text = "" + hourOfDay + ":" + minute
+        }
+
+
+    //  private fun setDate() {
+    //      showDialog(999)
+    // }
+
+
+    // override fun onCreateDialog(id: Int): Dialog? {
+    //     var calendar = Calendar.getInstance()
+    //      val year = calendar.get(Calendar.YEAR)
+    //      val month = calendar.get(Calendar.MONTH)
+    //   val day = calendar.get(Calendar.DAY_OF_MONTH)
+
+    //    return DatePickerDialog(this,
+    //        { view, year, monthOfYear, dayOfMonth ->
+    //           binding.textView.text = "" + dayOfMonth + "/" + (monthOfYear + 1) + "/" + year
+    //       }, year, month, day)
+
+    // }
 
 
     @SuppressLint("MissingPermission")
@@ -150,34 +249,47 @@ class AppointmentActivity : AppCompatActivity() {
 
 
                                     binding.textView2Test.text =
-                                        "currentlocation to pickup distance: " + mDistanceMatrix.rows[0].elements[0].distance.text + "\n" + "currentlocation to destination distance: " + mDistanceMatrix.rows[0].elements[0].duration.text + "\n" +  "currentlocation to pickup distance: " + mDistanceMatrix.rows[1].elements[1].distance.text + "\n" + "currentlocation to destination duration: " + mDistanceMatrix.rows[1].elements[1].duration.text
+                                        "currentlocation to pickup distance: " + mDistanceMatrix.rows[0].elements[0].distance.text + "\n" + "currentlocation to pickup distance: " + mDistanceMatrix.rows[0].elements[0].duration.text + "\n" + "pickup to destination distance: " + mDistanceMatrix.rows[1].elements[1].distance.text + "\n" + "pickup to destination duration: " + mDistanceMatrix.rows[1].elements[1].duration.text
 
-                                    //useful //row 0 element 0      //currentlocation to pickup distance
-                                    //useful //row 0 element 0      //currentlocation to pickup duration
+                                    /*  useful row 0 element 0    currentlocation to pickup distance
+                                    useful   row 0 element 0    currentlocation to pickup duration
 
-                                    //useful   //row 1 element 1        //pickup to destination distance
-                                    //useful   //row 1 element 1       //pickup to destination duration
+                                    useful  row 1 element 1  pickup to destination distance
+                                    useful  row 1 element 1  pickup to destination duration
 
-                                    //useless  //row 1 element 0   //pickup to pickup distance
-                                    //useless  //row 1 element 0  //pickup to pickup duration
+                                    useless row 1 element 0  pickup to pickup distance
+                                    useless row 1 element 0  pickup to pickup duration
 
-                                    //useful //row 0 element 1     //currentlocation to destination distance
-                                    //useful //row 0 element 1    /currentlocation to destination duration
+                                    useful row 0 element 1    currentlocation to destination distance
+                                    useful row 0 element 1    currentlocation to destination duration */
 
 
                                     //TODO
-                                    // Calculate event end time by processing pickup to destination duration -  - parse into timefromepoch millis
+                                    // convert API distance to KM and Metric depending on settings
+                                    // Calculate event end time by processing pickup to destination duration - parse into timefromepoch millis
                                     // Calculate event reminder length by processing currentlocation to pickup - parse into timefromepoch millis
-                                    // Calender Title needs to the name of the customer
                                     // Ensure that the calender does not overlap with any other events
+                                    // Create a dialog box to inform the user that the location is off and ask them to turn it on done
+                                    // Validation on each text field
 
+
+                                    val systemTime = System.currentTimeMillis()
 
 
                                     val intent = Intent(Intent.ACTION_INSERT)
                                         .setData(CalendarContract.Events.CONTENT_URI)
-                                        .putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME,300000000000)
-                                        .putExtra(CalendarContract.EXTRA_EVENT_END_TIME,30000000000000000)
-                                        .putExtra(CalendarContract.Events.TITLE, "Yoga")
+                                        .putExtra(
+                                            CalendarContract.EXTRA_EVENT_BEGIN_TIME,
+                                            systemTime
+                                        )
+                                        .putExtra(
+                                            CalendarContract.EXTRA_EVENT_END_TIME,
+                                            30000000000000000
+                                        )
+                                        .putExtra(
+                                            CalendarContract.Events.TITLE,
+                                            "Appointment for $clientname"
+                                        )
                                         .putExtra(CalendarContract.ACTION_EVENT_REMINDER, 100000000000)
 
                                         //why are these reversed???
@@ -269,10 +381,17 @@ class AppointmentActivity : AppCompatActivity() {
 
     fun submitBtnOnClick(view: View) {
 
-  if (ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED && ActivityCompat.checkSelfPermission(
+
+        clientname = binding.editTextTextPersonName.text.toString()
+
+
+        if (ActivityCompat.checkSelfPermission(
                 this,
-                Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_DENIED
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_DENIED && ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) == PackageManager.PERMISSION_DENIED
 
 
         ) {
@@ -285,14 +404,16 @@ class AppointmentActivity : AppCompatActivity() {
 
         }
 
+
         requestNewLocationData()
+
 
     }
 
     private fun isLocationEnabled(context: Context): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             // This is a new method provided in API 28
-            val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+            val lm = context.getSystemService(LOCATION_SERVICE) as LocationManager
 
             lm.isLocationEnabled
 
