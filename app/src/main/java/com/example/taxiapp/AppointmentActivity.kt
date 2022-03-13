@@ -4,9 +4,11 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.app.TimePickerDialog.OnTimeSetListener
 import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.os.Build
@@ -30,6 +32,7 @@ import com.google.android.libraries.places.widget.AutocompleteSupportFragment
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
 import com.google.gson.Gson
 import java.util.*
+
 
 data class DistanceMatrixRoot(
 
@@ -88,20 +91,22 @@ class AppointmentActivity : AppCompatActivity() {
 
     var destination: String? = null
 
+    private var epochTimeStart: Long = 0
+
 
     private lateinit var binding: ActivityAppointmentBinding
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
 
+    private val myCalendar: Calendar = Calendar.getInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
 
         binding = ActivityAppointmentBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-
 
         Places.initialize(applicationContext, "AIzaSyCgqQfyspQQ-cq-enAKgCQPmVkSb1bcLjM")
 
@@ -145,39 +150,58 @@ class AppointmentActivity : AppCompatActivity() {
         //   }
         //  binding.editTextDate.filters = arrayOf(filter)
 
+        val dateStart =
+            DatePickerDialog.OnDateSetListener { view, year, monthOfYear, dayOfMonth -> // TODO Auto-generated method stub
+                myCalendar[Calendar.YEAR] = year
+                myCalendar[Calendar.MONTH] = monthOfYear
+                myCalendar[Calendar.DATE] = dayOfMonth
+
+                binding.textViewDateField.text =
+                    "" + dayOfMonth + "/" + (monthOfYear + 1) + "/" + year
+            }
+
+
+
         binding.btnDatePicker.setOnClickListener {
 
-            val calendar = Calendar.getInstance()
-            val year = calendar.get(Calendar.YEAR)
-            val month = calendar.get(Calendar.MONTH)
-            val day = calendar.get(Calendar.DAY_OF_MONTH)
-
             DatePickerDialog(
+                // pass the Context
                 this,
-                { view, year, monthOfYear, dayOfMonth ->
-                    binding.textViewDateField.text =
-                        "" + dayOfMonth + "/" + (monthOfYear + 1) + "/" + year
-                }, year, month, day
-            )
-                .show()
+                // listener to perform task
+                // when time is picked
+                dateStart, myCalendar
+                    .get(Calendar.YEAR), myCalendar.get(Calendar.MONTH),
+                myCalendar.get(Calendar.DATE)
+            ).show()
+
         }
+
+
+        var timeStart =
+            OnTimeSetListener { view, hourOfDay, minute ->
+                binding.textViewTimeField.text = "" + hourOfDay + ":" + minute
+                myCalendar.set(Calendar.HOUR, hourOfDay)
+                myCalendar.set(Calendar.MINUTE, minute)
+
+            }
+
+
 
         binding.btnTimePicker.setOnClickListener {
 
-            val calendar = Calendar.getInstance()
 
             TimePickerDialog(
                 // pass the Context
                 this,
                 // listener to perform task
                 // when time is picked
-                timePickerDialogListener,
+                timeStart,
                 // default hour when the time picker
                 // dialog is opened
-                calendar.get(Calendar.HOUR_OF_DAY),
+                myCalendar.get(Calendar.HOUR_OF_DAY),
                 // default minute when the time picker
                 // dialog is opened
-                calendar.get(Calendar.MINUTE),
+                myCalendar.get(Calendar.MINUTE),
                 // 24 hours time picker is
                 // true
                 true
@@ -191,10 +215,6 @@ class AppointmentActivity : AppCompatActivity() {
 
     // listener which is triggered when the
     // time is picked from the time picker dialog
-    private val timePickerDialogListener: TimePickerDialog.OnTimeSetListener =
-        TimePickerDialog.OnTimeSetListener { view, hourOfDay, minute ->
-            binding.textViewTimeField.text = "" + hourOfDay + ":" + minute
-        }
 
 
     //  private fun setDate() {
@@ -216,8 +236,21 @@ class AppointmentActivity : AppCompatActivity() {
     // }
 
 
-    @SuppressLint("MissingPermission")
+    @SuppressLint("MissingPermission", "SetTextI18n")
     private fun requestNewLocationData(): String {
+
+        epochTimeStart = myCalendar.timeInMillis
+
+        Log.i("Time", epochTimeStart.toString())
+
+
+        val sharedPreferences: SharedPreferences =
+            getSharedPreferences("MySharedPref", MODE_PRIVATE)
+
+        val retrieveUnit = sharedPreferences.getString("unit:", "")
+
+        val retrieveRate = sharedPreferences.getString("rate:", "")
+
 
         if (isLocationEnabled(this)) {
 
@@ -232,7 +265,7 @@ class AppointmentActivity : AppCompatActivity() {
                         val queue = Volley.newRequestQueue(this)
 
                         val url =
-                            "https://maps.googleapis.com/maps/api/distancematrix/json?origins=${location.latitude.toString() + "," + location.longitude.toString()}|place_id:$pickupID&destinations=place_id:$pickupID|place_id:$destinationID&key=AIzaSyCgqQfyspQQ-cq-enAKgCQPmVkSb1bcLjM"
+                            "https://maps.googleapis.com/maps/api/distancematrix/json?units=${retrieveUnit.toString()}&origins=${location.latitude.toString() + "," + location.longitude.toString()}|place_id:$pickupID&destinations=place_id:$pickupID|place_id:$destinationID&key=AIzaSyCgqQfyspQQ-cq-enAKgCQPmVkSb1bcLjM"
 
                         val stringRequest = StringRequest(
                             Request.Method.GET, url,
@@ -257,45 +290,73 @@ class AppointmentActivity : AppCompatActivity() {
                                     useful  row 1 element 1  pickup to destination distance
                                     useful  row 1 element 1  pickup to destination duration
 
-                                    useless row 1 element 0  pickup to pickup distance
-                                    useless row 1 element 0  pickup to pickup duration
+                                    useless row 1 element 0  currentlocation to des distance
+                                    useless row 1 element 0  currentlocation to pickup duration
 
-                                    useful row 0 element 1    currentlocation to destination distance
-                                    useful row 0 element 1    currentlocation to destination duration */
+                                    useful row 0 element 1    pickup to pickup distance
+                                    useful row 0 element 1    pickup to pickup duration */
 
+                                    // total distance uses return text of distance splits it at the space delimiter and takes the first element and parses it into a double
+
+                                    val totalDistance =
+                                        mDistanceMatrix.rows[0].elements[0].distance.text.split(" ")[0].toDouble() + mDistanceMatrix.rows[1].elements[1].distance.text.split(
+                                            " "
+                                        )[0].toDouble()
+
+                                    // totalduration is the sum of the duration between currentlocation to pickup and pickup to destination. Value property is in seconds.
+
+                                    val totalDurationMilliseconds =
+                                        (mDistanceMatrix.rows[0].elements[0].duration.value + mDistanceMatrix.rows[1].elements[1].duration.value) * 1000
+
+                                    Log.i(TAG, totalDistance.toString())
+                                    Log.i(TAG, totalDurationMilliseconds.toString())
+
+
+                                    val totalCost = "%.2f".format(
+                                        totalDistance * retrieveRate.toString().toDouble()
+                                    )
+
+
+                                    Log.i(TAG, totalCost)
 
                                     //TODO
-                                    // convert API distance to KM and Metric depending on settings
-                                    // Calculate event end time by processing pickup to destination duration - parse into timefromepoch millis
+                                    // convert API distance to KM and Metric depending on settings - DONE
+                                    // parse start time - DONE
+                                    // Calculate event end time by processing pickup to destination duration - parse into timefromepoch millis - DONE
                                     // Calculate event reminder length by processing currentlocation to pickup - parse into timefromepoch millis
                                     // Ensure that the calender does not overlap with any other events
-                                    // Create a dialog box to inform the user that the location is off and ask them to turn it on done
+                                    // Create a dialog box to inform the user that the location is off and ask them to turn it on - DONE
                                     // Validation on each text field
-
-
-                                    val systemTime = System.currentTimeMillis()
 
 
                                     val intent = Intent(Intent.ACTION_INSERT)
                                         .setData(CalendarContract.Events.CONTENT_URI)
                                         .putExtra(
                                             CalendarContract.EXTRA_EVENT_BEGIN_TIME,
-                                            systemTime
+                                            epochTimeStart
                                         )
                                         .putExtra(
                                             CalendarContract.EXTRA_EVENT_END_TIME,
-                                            30000000000000000
+                                            epochTimeStart + totalDurationMilliseconds
                                         )
                                         .putExtra(
                                             CalendarContract.Events.TITLE,
                                             "Appointment for $clientname"
                                         )
-                                        .putExtra(CalendarContract.ACTION_EVENT_REMINDER, 100000000000)
+                                        .putExtra(
+                                            CalendarContract.ACTION_EVENT_REMINDER,
+                                            100000000000
+                                        )
 
                                         //why are these reversed???
-                                        .putExtra(CalendarContract.Events.DESCRIPTION,
-                                            pickup)
-                                        .putExtra(CalendarContract.Events.EVENT_LOCATION, "Estimated fare for the job: x    +  Duration of job    " )
+                                        .putExtra(
+                                            CalendarContract.Events.DESCRIPTION,
+                                            pickup
+                                        )
+                                        .putExtra(
+                                            CalendarContract.Events.EVENT_LOCATION,
+                                            "Estimated fare for the job: £$totalCost + Duration of job: $totalDurationMilliseconds ms"
+                                        )
 
 
                                         .putExtra(CalendarContract.Events.AVAILABILITY,
