@@ -91,9 +91,6 @@ class AppointmentActivity : AppCompatActivity() {
 
     var destination: String? = null
 
-    private var epochTimeStart: Long = 0
-
-
     private lateinit var binding: ActivityAppointmentBinding
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
@@ -103,7 +100,6 @@ class AppointmentActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
 
         binding = ActivityAppointmentBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -152,12 +148,13 @@ class AppointmentActivity : AppCompatActivity() {
 
         val dateStart =
             DatePickerDialog.OnDateSetListener { view, year, monthOfYear, dayOfMonth -> // TODO Auto-generated method stub
+                binding.textViewDateField.text =
+                    "" + dayOfMonth + "/" + (monthOfYear + 1) + "/" + year
+
                 myCalendar[Calendar.YEAR] = year
                 myCalendar[Calendar.MONTH] = monthOfYear
                 myCalendar[Calendar.DATE] = dayOfMonth
 
-                binding.textViewDateField.text =
-                    "" + dayOfMonth + "/" + (monthOfYear + 1) + "/" + year
             }
 
 
@@ -174,17 +171,21 @@ class AppointmentActivity : AppCompatActivity() {
                 myCalendar.get(Calendar.DATE)
             ).show()
 
+
         }
 
 
         var timeStart =
             OnTimeSetListener { view, hourOfDay, minute ->
-                binding.textViewTimeField.text = "" + hourOfDay + ":" + minute
-                myCalendar.set(Calendar.HOUR, hourOfDay)
+
+                binding.textViewTimeField.text =
+                    "" + hourOfDay + ":" + minute
+
+                myCalendar.set(Calendar.HOUR_OF_DAY, hourOfDay)
                 myCalendar.set(Calendar.MINUTE, minute)
 
-            }
 
+            }
 
 
         binding.btnTimePicker.setOnClickListener {
@@ -239,10 +240,10 @@ class AppointmentActivity : AppCompatActivity() {
     @SuppressLint("MissingPermission", "SetTextI18n")
     private fun requestNewLocationData(): String {
 
-        epochTimeStart = myCalendar.timeInMillis
+        var epochTimeStart = myCalendar.timeInMillis
 
         Log.i("Time", epochTimeStart.toString())
-
+        Log.i("Time", myCalendar.toString())
 
         val sharedPreferences: SharedPreferences =
             getSharedPreferences("MySharedPref", MODE_PRIVATE)
@@ -322,7 +323,7 @@ class AppointmentActivity : AppCompatActivity() {
                                     //TODO
                                     // convert API distance to KM and Metric depending on settings - DONE
                                     // parse start time - DONE
-                                    // Calculate event end time by processing pickup to destination duration - parse into timefromepoch millis - DONE
+                                    // Calculate event end time by processing pickup to destination duration - parse into timefromepoch millis - DONE + FIXED
                                     // Calculate event reminder length by processing currentlocation to pickup - parse into timefromepoch millis
                                     // Ensure that the calender does not overlap with any other events
                                     // Create a dialog box to inform the user that the location is off and ask them to turn it on - DONE
@@ -342,10 +343,6 @@ class AppointmentActivity : AppCompatActivity() {
                                         .putExtra(
                                             CalendarContract.Events.TITLE,
                                             "Appointment for $clientname"
-                                        )
-                                        .putExtra(
-                                            CalendarContract.ACTION_EVENT_REMINDER,
-                                            100000000000
                                         )
 
                                         //why are these reversed???
