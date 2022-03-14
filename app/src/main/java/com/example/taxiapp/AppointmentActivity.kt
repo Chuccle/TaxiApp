@@ -17,6 +17,7 @@ import android.provider.CalendarContract
 import android.provider.Settings
 import android.util.Log
 import android.view.View
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.android.volley.Request
@@ -81,15 +82,20 @@ data class Duration(
 
 class AppointmentActivity : AppCompatActivity() {
 
-    var clientname: String? = null
+    //TODO
+    // Ensure that the calender does not overlap with any other events
+    // Validation on each text field - DONE
+    // Format time field - DONE
+
+    var clientName: String = ""
 
     var pickupID: String? = null
 
-    var pickup: String? = null
+    var pickup: String = ""
 
     var destinationID: String? = null
 
-    var destination: String? = null
+    var destination: String = ""
 
     private lateinit var binding: ActivityAppointmentBinding
 
@@ -148,6 +154,8 @@ class AppointmentActivity : AppCompatActivity() {
 
         val dateStart =
             DatePickerDialog.OnDateSetListener { view, year, monthOfYear, dayOfMonth -> // TODO Auto-generated method stub
+
+
                 binding.textViewDateField.text =
                     "" + dayOfMonth + "/" + (monthOfYear + 1) + "/" + year
 
@@ -178,8 +186,40 @@ class AppointmentActivity : AppCompatActivity() {
         var timeStart =
             OnTimeSetListener { view, hourOfDay, minute ->
 
-                binding.textViewTimeField.text =
-                    "" + hourOfDay + ":" + minute
+
+                when {
+
+                    hourOfDay < 10 && minute < 10 -> {
+
+                        binding.textViewTimeField.text =
+                            "0" + hourOfDay + ":0" + minute
+
+                    }
+
+
+                    hourOfDay < 10 -> {
+
+                        binding.textViewTimeField.text =
+                            "0" + hourOfDay + ":" + minute
+
+                    }
+
+
+                    minute < 10 -> {
+
+                        binding.textViewTimeField.text =
+                            "" + hourOfDay + ":0" + minute
+
+                    }
+
+                    else -> {
+
+                        binding.textViewTimeField.text =
+                            "" + hourOfDay + ":" + minute
+
+                    }
+
+                }
 
                 myCalendar.set(Calendar.HOUR_OF_DAY, hourOfDay)
                 myCalendar.set(Calendar.MINUTE, minute)
@@ -213,7 +253,6 @@ class AppointmentActivity : AppCompatActivity() {
 
     }
 
-
     // listener which is triggered when the
     // time is picked from the time picker dialog
 
@@ -235,6 +274,7 @@ class AppointmentActivity : AppCompatActivity() {
     //       }, year, month, day)
 
     // }
+
 
 
     @SuppressLint("MissingPermission", "SetTextI18n")
@@ -317,18 +357,7 @@ class AppointmentActivity : AppCompatActivity() {
                                         totalDistance * retrieveRate.toString().toDouble()
                                     )
 
-
                                     Log.i(TAG, totalCost)
-
-                                    //TODO
-                                    // convert API distance to KM and Metric depending on settings - DONE
-                                    // parse start time - DONE
-                                    // Calculate event end time by processing pickup to destination duration - parse into timefromepoch millis - DONE + FIXED
-                                    // Calculate event reminder length by processing currentlocation to pickup - parse into timefromepoch millis
-                                    // Ensure that the calender does not overlap with any other events
-                                    // Create a dialog box to inform the user that the location is off and ask them to turn it on - DONE
-                                    // Validation on each text field
-
 
                                     val intent = Intent(Intent.ACTION_INSERT)
                                         .setData(CalendarContract.Events.CONTENT_URI)
@@ -342,7 +371,7 @@ class AppointmentActivity : AppCompatActivity() {
                                         )
                                         .putExtra(
                                             CalendarContract.Events.TITLE,
-                                            "Appointment for $clientname"
+                                            "Appointment for $clientName"
                                         )
 
                                         //why are these reversed???
@@ -369,6 +398,13 @@ class AppointmentActivity : AppCompatActivity() {
 
                                     binding.textView2Test.text = e.toString()
 
+
+                                    val text = "An API error has occurred"
+                                    val duration = Toast.LENGTH_SHORT
+
+                                    val toast = Toast.makeText(applicationContext, text, duration)
+                                    toast.show()
+
                                 }
 
                             },
@@ -379,7 +415,7 @@ class AppointmentActivity : AppCompatActivity() {
 
                     } else {
 
-                        this.title = "An error has occurred"
+                        this.title = "A location error has occurred"
 
                     }
 
@@ -440,7 +476,21 @@ class AppointmentActivity : AppCompatActivity() {
     fun submitBtnOnClick(view: View) {
 
 
-        clientname = binding.editTextTextPersonName.text.toString()
+        clientName = binding.editTextTextPersonName.text.toString()
+
+        if (clientName == "" || pickup == "" || destination == "") {
+
+            val text = "Please fill in all fields"
+            val duration = Toast.LENGTH_SHORT
+
+            val toast = Toast.makeText(applicationContext, text, duration)
+            toast.show()
+
+
+            return
+
+        }
+
 
 
         if (ActivityCompat.checkSelfPermission(
@@ -462,9 +512,7 @@ class AppointmentActivity : AppCompatActivity() {
 
         }
 
-
         requestNewLocationData()
-
 
     }
 
@@ -487,6 +535,7 @@ class AppointmentActivity : AppCompatActivity() {
         }
 
     }
+
 }
 
 
