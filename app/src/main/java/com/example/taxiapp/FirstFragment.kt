@@ -2,14 +2,11 @@ package com.example.taxiapp
 
 import android.content.Intent
 import android.os.Bundle
-import android.provider.CalendarContract
-import android.provider.CalendarContract.Events
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.example.taxiapp.databinding.FragmentFirstBinding
-import java.util.*
 
 
 /**
@@ -41,6 +38,8 @@ class FirstFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+
 
         binding.appointmentViewerBtn.setOnClickListener {
 

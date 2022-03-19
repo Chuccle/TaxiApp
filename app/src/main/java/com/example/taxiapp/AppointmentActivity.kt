@@ -5,12 +5,14 @@ import android.annotation.SuppressLint
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.app.TimePickerDialog.OnTimeSetListener
+import android.content.ContentUris
 import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.location.LocationManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.CalendarContract
@@ -80,12 +82,8 @@ data class Duration(
     )
 
 
-class AppointmentActivity : AppCompatActivity() {
 
-    //TODO
-    // Ensure that the calender does not overlap with any other events
-    // Validation on each text field - DONE
-    // Format time field - DONE
+class AppointmentActivity : AppCompatActivity() {
 
     var clientName: String = ""
 
@@ -110,7 +108,8 @@ class AppointmentActivity : AppCompatActivity() {
         binding = ActivityAppointmentBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        Places.initialize(applicationContext, "AIzaSyCgqQfyspQQ-cq-enAKgCQPmVkSb1bcLjM")
+        Places.initialize(applicationContext, resources.getString(R.string.api_key))
+
 
         // Create a new PlacesClient instance
         Places.createClient(this)
@@ -120,37 +119,6 @@ class AppointmentActivity : AppCompatActivity() {
         autocompleteLogic(R.id.autocomplete_fragment2)
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-
-        // val filter =
-        //  InputFilter { source, start, end, dest, dstart, dend ->
-        //      for (i in start until end) {
-        //
-        //
-        //           when (source[i]) {
-        //              '/'->  null
-        //              '0'->  null
-        //              '1'->  null
-        //              '2'->  null
-        //              '3'->  null
-        //              '4'->  null
-        //              '5'->  null
-        //              '6'->  null
-        //              '7'->  null
-        //              '8'->  null
-        //              '9'->  null
-        //             else -> { // Note the block
-        //                  return@InputFilter ""
-        //         }
-        //     }
-        //
-        //      if (i == 1) {
-        //        return@InputFilter '/'.toString()
-        //      }
-        //
-        //    }
-        //     null
-        //   }
-        //  binding.editTextDate.filters = arrayOf(filter)
 
         val dateStart =
             DatePickerDialog.OnDateSetListener { view, year, monthOfYear, dayOfMonth -> // TODO Auto-generated method stub
@@ -164,7 +132,6 @@ class AppointmentActivity : AppCompatActivity() {
                 myCalendar[Calendar.DATE] = dayOfMonth
 
             }
-
 
 
         binding.btnDatePicker.setOnClickListener {
@@ -187,12 +154,14 @@ class AppointmentActivity : AppCompatActivity() {
             OnTimeSetListener { view, hourOfDay, minute ->
 
 
+                //switch case to auto-format the time fields in a consistent way
+
                 when {
 
                     hourOfDay < 10 && minute < 10 -> {
 
                         binding.textViewTimeField.text =
-                            "0" + hourOfDay + ":0" + minute
+                            "0$hourOfDay:0$minute"
 
                     }
 
@@ -200,7 +169,7 @@ class AppointmentActivity : AppCompatActivity() {
                     hourOfDay < 10 -> {
 
                         binding.textViewTimeField.text =
-                            "0" + hourOfDay + ":" + minute
+                            "0$hourOfDay:$minute"
 
                     }
 
@@ -208,14 +177,14 @@ class AppointmentActivity : AppCompatActivity() {
                     minute < 10 -> {
 
                         binding.textViewTimeField.text =
-                            "" + hourOfDay + ":0" + minute
+                            "$hourOfDay:0$minute"
 
                     }
 
                     else -> {
 
                         binding.textViewTimeField.text =
-                            "" + hourOfDay + ":" + minute
+                            "$hourOfDay:$minute"
 
                     }
 
@@ -226,7 +195,6 @@ class AppointmentActivity : AppCompatActivity() {
 
 
             }
-
 
         binding.btnTimePicker.setOnClickListener {
 
@@ -253,37 +221,45 @@ class AppointmentActivity : AppCompatActivity() {
 
     }
 
-    // listener which is triggered when the
-    // time is picked from the time picker dialog
+    private fun permissionCheck(): Boolean {
+
+        //If any of the listed permissions are not granted then the function returns false
+
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_DENIED || ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) == PackageManager.PERMISSION_DENIED || ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.WRITE_CALENDAR
+            ) == PackageManager.PERMISSION_DENIED || ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.READ_CALENDAR
+            ) == PackageManager.PERMISSION_DENIED
 
 
-    //  private fun setDate() {
-    //      showDialog(999)
-    // }
+        ) {
 
 
-    // override fun onCreateDialog(id: Int): Dialog? {
-    //     var calendar = Calendar.getInstance()
-    //      val year = calendar.get(Calendar.YEAR)
-    //      val month = calendar.get(Calendar.MONTH)
-    //   val day = calendar.get(Calendar.DAY_OF_MONTH)
+            return false
+        }
 
-    //    return DatePickerDialog(this,
-    //        { view, year, monthOfYear, dayOfMonth ->
-    //           binding.textView.text = "" + dayOfMonth + "/" + (monthOfYear + 1) + "/" + year
-    //       }, year, month, day)
-
-    // }
-
+        return true
+    }
 
 
     @SuppressLint("MissingPermission", "SetTextI18n")
-    private fun requestNewLocationData(): String {
+    private fun requestNewLocationData() {
 
         var epochTimeStart = myCalendar.timeInMillis
 
         Log.i("Time", epochTimeStart.toString())
+
         Log.i("Time", myCalendar.toString())
+
+//shared preferences stores our preferences in local storage and retrieved here
 
         val sharedPreferences: SharedPreferences =
             getSharedPreferences("MySharedPref", MODE_PRIVATE)
@@ -306,11 +282,16 @@ class AppointmentActivity : AppCompatActivity() {
                         val queue = Volley.newRequestQueue(this)
 
                         val url =
-                            "https://maps.googleapis.com/maps/api/distancematrix/json?units=${retrieveUnit.toString()}&origins=${location.latitude.toString() + "," + location.longitude.toString()}|place_id:$pickupID&destinations=place_id:$pickupID|place_id:$destinationID&key=AIzaSyCgqQfyspQQ-cq-enAKgCQPmVkSb1bcLjM"
+                            "https://maps.googleapis.com/maps/api/distancematrix/json?units=${retrieveUnit.toString()}&origins=${location.latitude.toString() + "," + location.longitude.toString()}|place_id:$pickupID&destinations=place_id:$pickupID|place_id:$destinationID&key=${
+                                resources.getString(
+                                    R.string.api_key
+                                )
+                            }"
 
                         val stringRequest = StringRequest(
                             Request.Method.GET, url,
                             { response ->
+
 
                                 this.title = "Results"
 
@@ -320,6 +301,79 @@ class AppointmentActivity : AppCompatActivity() {
 
                                     val mDistanceMatrix =
                                         gson.fromJson(response, DistanceMatrixRoot::class.java)
+
+                                    val totalDurationMilliseconds =
+                                        (mDistanceMatrix.rows[0].elements[0].duration.value + mDistanceMatrix.rows[1].elements[1].duration.value) * 1000
+
+
+                                    //This will go through the users calendars and from the calculated time range of the proposed event
+                                    // and work out if it conflicts with any existing events
+
+
+                                    // Projection array. Creating indices for this array instead of doing dynamic lookups improves performance.
+                                    val INSTANCE_PROJECTION = arrayOf(
+                                        CalendarContract.Instances.EVENT_ID,      // 0
+                                        CalendarContract.Instances.BEGIN,         // 1
+                                        CalendarContract.Instances.TITLE,          // 2
+                                        CalendarContract.Instances.ORGANIZER,
+                                    )
+
+                                    val PROJECTION_ID_INDEX = 0
+                                    val PROJECTION_BEGIN_INDEX = 1
+                                    val PROJECTION_TITLE_INDEX = 2
+                                    val PROJECTION_ORGANIZER_INDEX = 3
+
+
+                                    val builder: Uri.Builder =
+                                        CalendarContract.Instances.CONTENT_URI.buildUpon()
+
+                                    // define time range for query
+                                    ContentUris.appendId(builder, epochTimeStart)
+
+                                    ContentUris.appendId(
+                                        builder,
+                                        epochTimeStart + totalDurationMilliseconds
+                                    )
+
+                                    // Submit the query
+                                    val cur =
+                                        contentResolver.query(
+                                            builder.build(),
+                                            INSTANCE_PROJECTION,
+                                            null,
+                                            null,
+                                            null
+                                        )
+
+                                    // if event is found, then there we exit the function
+
+                                    if (cur != null && cur.count > 0) {
+
+                                        while (cur.moveToNext()) {
+
+                                            val eventID = cur.getLong(PROJECTION_ID_INDEX)
+                                            val beginVal = cur.getLong(PROJECTION_BEGIN_INDEX)
+                                            val title = cur.getString(PROJECTION_TITLE_INDEX)
+                                            val organizer =
+                                                cur.getString(PROJECTION_ORGANIZER_INDEX)
+
+
+                                            Log.i(
+                                                "Event found",
+                                                "Event ID: $eventID, Begin: $beginVal, Title: $title, Organizer: $organizer"
+                                            )
+
+
+                                            Toast.makeText(
+                                                this,
+                                                "Event ID: $title is booked for this time",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                            return@StringRequest
+
+                                        }
+                                    }
+
 
 
                                     binding.textView2Test.text =
@@ -346,8 +400,6 @@ class AppointmentActivity : AppCompatActivity() {
 
                                     // totalduration is the sum of the duration between currentlocation to pickup and pickup to destination. Value property is in seconds.
 
-                                    val totalDurationMilliseconds =
-                                        (mDistanceMatrix.rows[0].elements[0].duration.value + mDistanceMatrix.rows[1].elements[1].duration.value) * 1000
 
                                     Log.i(TAG, totalDistance.toString())
                                     Log.i(TAG, totalDurationMilliseconds.toString())
@@ -429,7 +481,7 @@ class AppointmentActivity : AppCompatActivity() {
 
         }
 
-        return "swag"
+        return
     }
 
 
@@ -475,7 +527,6 @@ class AppointmentActivity : AppCompatActivity() {
 
     fun submitBtnOnClick(view: View) {
 
-
         clientName = binding.editTextTextPersonName.text.toString()
 
         if (clientName == "" || pickup == "" || destination == "") {
@@ -486,29 +537,20 @@ class AppointmentActivity : AppCompatActivity() {
             val toast = Toast.makeText(applicationContext, text, duration)
             toast.show()
 
-
             return
 
         }
 
 
+        if (!permissionCheck()) {
 
-        if (ActivityCompat.checkSelfPermission(
+            Toast.makeText(
                 this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_DENIED && ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) == PackageManager.PERMISSION_DENIED
+                "Permissions are denied, please check your app settings",
+                Toast.LENGTH_SHORT
+            ).show()
 
-
-        ) {
-
-
-            ActivityCompat.requestPermissions(this,
-                arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION,
-                    Manifest.permission.ACCESS_FINE_LOCATION),
-                1)
+            return
 
         }
 
@@ -517,11 +559,13 @@ class AppointmentActivity : AppCompatActivity() {
     }
 
     private fun isLocationEnabled(context: Context): Boolean {
+
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             // This is a new method provided in API 28
             val lm = context.getSystemService(LOCATION_SERVICE) as LocationManager
 
             lm.isLocationEnabled
+
 
         } else {
             // This was deprecated in API 28
