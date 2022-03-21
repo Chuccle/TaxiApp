@@ -43,6 +43,8 @@ class FirstFragment : Fragment() {
 
         binding.appointmentViewerBtn.setOnClickListener {
 
+            val intent = Intent(requireContext(), CalendarActivity::class.java)
+            startActivity(intent)
 
 
         }

@@ -141,8 +141,7 @@ class AppointmentActivity : AppCompatActivity() {
                 this,
                 // listener to perform task
                 // when time is picked
-                dateStart, myCalendar
-                    .get(Calendar.YEAR), myCalendar.get(Calendar.MONTH),
+                dateStart, myCalendar.get(Calendar.YEAR), myCalendar.get(Calendar.MONTH),
                 myCalendar.get(Calendar.DATE)
             ).show()
 
@@ -292,7 +291,6 @@ class AppointmentActivity : AppCompatActivity() {
                             Request.Method.GET, url,
                             { response ->
 
-
                                 this.title = "Results"
 
                                 val gson = Gson()
@@ -335,14 +333,16 @@ class AppointmentActivity : AppCompatActivity() {
                                         epochTimeStart + totalDurationMilliseconds
                                     )
 
+
+                                    val selection = CalendarContract.Instances.ORGANIZER + " = ?"
+                                    val selectionArgs = arrayOf("My calendar")
+
                                     // Submit the query
                                     val cur =
                                         contentResolver.query(
                                             builder.build(),
                                             INSTANCE_PROJECTION,
-                                            null,
-                                            null,
-                                            null
+                                            selection, selectionArgs, null
                                         )
 
                                     // if event is found, then there we exit the function
@@ -411,6 +411,29 @@ class AppointmentActivity : AppCompatActivity() {
 
                                     Log.i(TAG, totalCost)
 
+
+                                    // less user friendly
+
+                                    /*      val cr = contentResolver
+                                            val values = ContentValues()
+                                            values.put(CalendarContract.Events.DTSTART, epochTimeStart)
+                                            values.put(CalendarContract.Events.DTEND,  epochTimeStart + totalDurationMilliseconds)
+                                            values.put(CalendarContract.Events.TITLE,  "Appointment for $clientName")
+                                            values.put(CalendarContract.Events.DESCRIPTION,  "Estimated fare for the job: £$totalCost + Duration of job: $totalDurationMilliseconds ms" )
+                                            values.put(
+                                                CalendarContract.Events.ORGANIZER,
+                                                "joe"
+                                            )
+                                            values.put(
+                                                CalendarContract.Events.EVENT_LOCATION,
+                                                pickup
+                                            )
+                                            values.put(CalendarContract.Events.CALENDAR_ID, 1)
+                                            values.put(CalendarContract.Events.EVENT_TIMEZONE, "London/UK")
+                                            values.put(CalendarContract.Events.AVAILABILITY, CalendarContract.Events.AVAILABILITY_BUSY)
+
+                                            val uri = cr.insert(CalendarContract.Events.CONTENT_URI, values) */
+
                                     val intent = Intent(Intent.ACTION_INSERT)
                                         .setData(CalendarContract.Events.CONTENT_URI)
                                         .putExtra(
@@ -435,13 +458,8 @@ class AppointmentActivity : AppCompatActivity() {
                                             CalendarContract.Events.EVENT_LOCATION,
                                             "Estimated fare for the job: £$totalCost + Duration of job: $totalDurationMilliseconds ms"
                                         )
-
-
-                                        .putExtra(CalendarContract.Events.AVAILABILITY,
-                                            CalendarContract.Events.AVAILABILITY_BUSY)
-                                        .putExtra(Intent.EXTRA_EMAIL,
-                                            "rowan@example.com,trevor@example.com")
                                     startActivity(intent)
+
 
 
                                 } catch (e: Throwable) {
@@ -484,12 +502,13 @@ class AppointmentActivity : AppCompatActivity() {
         return
     }
 
-
     private fun autocompleteLogic(autocompleteID: Int) {
         // Initialize the AutocompleteSupportFragment.
         val autocompleteFragment =
             supportFragmentManager.findFragmentById(autocompleteID)
                     as AutocompleteSupportFragment
+
+        autocompleteFragment.setCountry("UK")
 
         // Specify the types of place data to return.
         autocompleteFragment.setPlaceFields(listOf(Place.Field.ID, Place.Field.NAME))
@@ -502,6 +521,8 @@ class AppointmentActivity : AppCompatActivity() {
 
                     pickupID = place.id
                     pickup = place.name
+
+
 
                     Log.i(TAG, "Place1: ${pickup}, ${place.id}")
 

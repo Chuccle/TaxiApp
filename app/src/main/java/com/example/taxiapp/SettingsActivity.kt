@@ -1,7 +1,6 @@
 package com.example.taxiapp
 
 
-import android.content.ContentValues.TAG
 import android.os.Bundle
 import android.util.Log
 import android.widget.CompoundButton
@@ -28,8 +27,16 @@ class SettingsActivity : AppCompatActivity() {
         setContentView(binding.root)
 
 
-            binding.editTextRate.setText(sharedPreferences.getString("rate:", ""))
+        if (sharedPreferences.getString("rate:", "") != "") {
 
+            binding.editTextRate.setText(sharedPreferences.getString("rate:", ""))
+            Log.wtf("flag1", sharedPreferences.getString("rate:", ""))
+
+        } else {
+
+            Log.wtf("flag2", sharedPreferences.getString("rate:", ""))
+            binding.editTextRate.setText("0.00")
+        }
 
 // needs to initialised
        // var dEditText: Double
@@ -42,19 +49,9 @@ class SettingsActivity : AppCompatActivity() {
 
         switchUnit.setOnCheckedChangeListener { _: CompoundButton?, isMetric:Boolean ->
 
-         var dEditText = try {
 
-                binding.editTextRate.text.toString().toDouble()
+            var dEditText = binding.editTextRate.text.toString().toDouble()
 
-            } catch(e:NumberFormatException) {
-
-                Log.wtf(TAG, e.toString())
-
-                binding.editTextRate.setText("0.00")
-
-             0.00
-
-            }
 
             if (isMetric) {
 
