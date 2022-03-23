@@ -13,7 +13,7 @@ import java.util.*
 class CalendarActivity : AppCompatActivity() {
     // Define the variable of CalendarView type
     // and TextView type;
-    var calendar: CalendarView? = null
+    private var calendar: CalendarView? = null
 
     private val myCalendar: Calendar = Calendar.getInstance()
 
@@ -38,7 +38,7 @@ class CalendarActivity : AppCompatActivity() {
             myCalendar[Calendar.MONTH] = month
             myCalendar[Calendar.DATE] = dayOfMonth
 
-            var epochTimeStart = myCalendar.timeInMillis
+            val epochTimeStart = myCalendar.timeInMillis
             //This will go through the users calendars and from the calculated time range of the proposed event
             // and work out if it conflicts with any existing events
 

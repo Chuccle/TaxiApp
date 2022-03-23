@@ -6,7 +6,6 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.app.TimePickerDialog.OnTimeSetListener
 import android.content.ContentUris
-import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -17,8 +16,6 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.CalendarContract
 import android.provider.Settings
-import android.util.Log
-import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -37,63 +34,17 @@ import com.google.gson.Gson
 import java.util.*
 
 
-data class DistanceMatrixRoot(
-
-    val destination_addresses: List<String>,
-
-    val origin_addresses: List<String>,
-
-    val rows: List<Row>,
-
-    val status: String,
-
-    )
-
-data class Row(
-
-    val elements: List<Element>,
-
-    )
-
-data class Element(
-
-    val distance: Distance,
-
-    val duration: Duration,
-
-    val status: String,
-
-    )
-
-data class Distance(
-
-    val text: String,
-
-    val value: Int,
-
-    )
-
-data class Duration(
-
-    val text: String,
-
-    val value: Int,
-
-    )
-
-
-
 class AppointmentActivity : AppCompatActivity() {
 
-    var clientName: String = ""
+    private var clientName: String? = null
 
     var pickupID: String? = null
 
-    var pickup: String = ""
+    var pickup: String? = null
 
     var destinationID: String? = null
 
-    var destination: String = ""
+    var destination: String? = null
 
     private lateinit var binding: ActivityAppointmentBinding
 
@@ -121,11 +72,16 @@ class AppointmentActivity : AppCompatActivity() {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         val dateStart =
-            DatePickerDialog.OnDateSetListener { view, year, monthOfYear, dayOfMonth -> // TODO Auto-generated method stub
+            DatePickerDialog.OnDateSetListener { view, year, monthOfYear, dayOfMonth ->
 
 
                 binding.textViewDateField.text =
-                    "" + dayOfMonth + "/" + (monthOfYear + 1) + "/" + year
+                    resources.getString(
+                        R.string.dateFieldTemplate,
+                        dayOfMonth,
+                        monthOfYear + 1,
+                        year
+                    )
 
                 myCalendar[Calendar.YEAR] = year
                 myCalendar[Calendar.MONTH] = monthOfYear
@@ -149,7 +105,7 @@ class AppointmentActivity : AppCompatActivity() {
         }
 
 
-        var timeStart =
+        val timeStart =
             OnTimeSetListener { view, hourOfDay, minute ->
 
 
@@ -160,30 +116,27 @@ class AppointmentActivity : AppCompatActivity() {
                     hourOfDay < 10 && minute < 10 -> {
 
                         binding.textViewTimeField.text =
-                            "0$hourOfDay:0$minute"
+                            resources.getString(R.string.timeFieldTemplate1, hourOfDay, minute)
 
                     }
-
 
                     hourOfDay < 10 -> {
 
                         binding.textViewTimeField.text =
-                            "0$hourOfDay:$minute"
+                            resources.getString(R.string.timeFieldTemplate2, hourOfDay, minute)
 
                     }
-
 
                     minute < 10 -> {
 
                         binding.textViewTimeField.text =
-                            "$hourOfDay:0$minute"
-
+                            resources.getString(R.string.timeFieldTemplate3, hourOfDay, minute)
                     }
 
                     else -> {
 
                         binding.textViewTimeField.text =
-                            "$hourOfDay:$minute"
+                            resources.getString(R.string.timeFieldTemplate4, hourOfDay, minute)
 
                     }
 
@@ -218,6 +171,39 @@ class AppointmentActivity : AppCompatActivity() {
                 .show()
         }
 
+        binding.btnSubmit.setOnClickListener {
+
+            clientName = binding.editTextTextPersonName.text.toString()
+
+            if (clientName == "" || pickup == "" || destination == "") {
+
+                val text = "Please fill in all fields"
+                val duration = Toast.LENGTH_SHORT
+
+                val toast = Toast.makeText(applicationContext, text, duration)
+                toast.show()
+
+                return@setOnClickListener
+
+            }
+
+
+            if (!permissionCheck()) {
+
+                Toast.makeText(
+                    this,
+                    "Permissions are denied, please check your app settings",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                return@setOnClickListener
+
+            }
+
+            requestNewLocationData()
+
+        }
+
     }
 
     private fun permissionCheck(): Boolean {
@@ -249,14 +235,149 @@ class AppointmentActivity : AppCompatActivity() {
     }
 
 
-    @SuppressLint("MissingPermission", "SetTextI18n")
+    private fun calendarInsert(
+        epochTimeStart: Long,
+        totalDurationMilliseconds: Int,
+        clientName: String?,
+        pickup: String?,
+        destination: String?,
+        totalCost: String
+    ) {
+
+
+        //This will go through the users calendars and from the calculated time range of the proposed event
+        // and work out if it conflicts with any existing events
+
+        // Projection array.
+
+
+        val INSTANCE_PROJECTION = arrayOf(
+            CalendarContract.Instances.EVENT_ID,      // 0
+            CalendarContract.Instances.BEGIN,         // 1
+            CalendarContract.Instances.TITLE,          // 2
+            CalendarContract.Instances.ORGANIZER,
+        )
+
+        // val PROJECTION_ID_INDEX = 0
+        //  val PROJECTION_BEGIN_INDEX = 1
+        val PROJECTION_TITLE_INDEX = 2
+        // val PROJECTION_ORGANIZER_INDEX = 3
+
+
+        val builder: Uri.Builder =
+            CalendarContract.Instances.CONTENT_URI.buildUpon()
+
+        // define time range for query
+        ContentUris.appendId(builder, epochTimeStart)
+
+        ContentUris.appendId(
+            builder,
+            epochTimeStart + totalDurationMilliseconds
+        )
+
+// define selection criteria, we don't want system events to count
+
+        val selection = CalendarContract.Instances.ORGANIZER + " = ?"
+        val selectionArgs = arrayOf("My calendar")
+
+        // Submit the query
+        val cur =
+            contentResolver.query(
+                builder.build(),
+                INSTANCE_PROJECTION,
+                selection, selectionArgs, null
+            )
+
+        // if event is found, then there we exit the function
+
+        if (cur != null && cur.count > 0) {
+
+            while (cur.moveToNext()) {
+
+                // val eventID = cur.getLong(PROJECTION_ID_INDEX)
+                // val beginVal = cur.getLong(PROJECTION_BEGIN_INDEX)
+                val title = cur.getString(PROJECTION_TITLE_INDEX)
+                //   val organizer = cur.getString(PROJECTION_ORGANIZER_INDEX)
+
+                Toast.makeText(
+                    this,
+                    "Error: $title will overlap with this booking",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                return
+
+            }
+
+            cur.close()
+
+        }
+
+
+// This intent uses the supplied arguments to create a new calendar event
+
+        val intent = Intent(Intent.ACTION_INSERT)
+
+            .setData(CalendarContract.Events.CONTENT_URI)
+
+            .putExtra(
+                CalendarContract.EXTRA_EVENT_BEGIN_TIME,
+                epochTimeStart
+            )
+
+            .putExtra(
+                CalendarContract.EXTRA_EVENT_END_TIME,
+                epochTimeStart + totalDurationMilliseconds
+            )
+
+            .putExtra(
+                CalendarContract.Events.TITLE,
+                "Appointment for $clientName"
+            )
+
+            //why are these reversed???
+            .putExtra(
+                CalendarContract.Events.DESCRIPTION,
+                pickup
+            )
+
+            .putExtra(
+                CalendarContract.Events.EVENT_LOCATION,
+                "Estimated fare for the job: £$totalCost from $pickup to $destination"
+            )
+
+        startActivity(intent)
+
+        // less user friendly
+
+        /*      val cr = contentResolver
+                val values = ContentValues()
+                values.put(CalendarContract.Events.DTSTART, epochTimeStart)
+                values.put(CalendarContract.Events.DTEND,  epochTimeStart + totalDurationMilliseconds)
+                values.put(CalendarContract.Events.TITLE,  "Appointment for $clientName")
+                values.put(CalendarContract.Events.DESCRIPTION,  "Estimated fare for the job: £$totalCost + Duration of job: $totalDurationMilliseconds ms" )
+                values.put(
+                    CalendarContract.Events.ORGANIZER,
+                    "joe"
+                )
+                values.put(
+                    CalendarContract.Events.EVENT_LOCATION,
+                    pickup
+                )
+                values.put(CalendarContract.Events.CALENDAR_ID, 1)
+                values.put(CalendarContract.Events.EVENT_TIMEZONE, "London/UK")
+                values.put(CalendarContract.Events.AVAILABILITY, CalendarContract.Events.AVAILABILITY_BUSY)
+
+                val uri = cr.insert(CalendarContract.Events.CONTENT_URI, values) */
+
+
+    }
+
+
+    @SuppressLint("MissingPermission")
     private fun requestNewLocationData() {
 
-        var epochTimeStart = myCalendar.timeInMillis
-
-        Log.i("Time", epochTimeStart.toString())
-
-        Log.i("Time", myCalendar.toString())
+        val epochTimeStart = myCalendar.timeInMillis
 
 //shared preferences stores our preferences in local storage and retrieved here
 
@@ -274,9 +395,8 @@ class AppointmentActivity : AppCompatActivity() {
                 .addOnSuccessListener { location ->
                     if (location != null) {
                         // use your location object
+
                         // get latitude , longitude and other info from this
-                        binding.textView2Test.text =
-                            location.latitude.toString() + "," + location.longitude.toString()
 
                         val queue = Volley.newRequestQueue(this)
 
@@ -304,93 +424,6 @@ class AppointmentActivity : AppCompatActivity() {
                                         (mDistanceMatrix.rows[0].elements[0].duration.value + mDistanceMatrix.rows[1].elements[1].duration.value) * 1000
 
 
-                                    //This will go through the users calendars and from the calculated time range of the proposed event
-                                    // and work out if it conflicts with any existing events
-
-
-                                    // Projection array. Creating indices for this array instead of doing dynamic lookups improves performance.
-                                    val INSTANCE_PROJECTION = arrayOf(
-                                        CalendarContract.Instances.EVENT_ID,      // 0
-                                        CalendarContract.Instances.BEGIN,         // 1
-                                        CalendarContract.Instances.TITLE,          // 2
-                                        CalendarContract.Instances.ORGANIZER,
-                                    )
-
-                                    val PROJECTION_ID_INDEX = 0
-                                    val PROJECTION_BEGIN_INDEX = 1
-                                    val PROJECTION_TITLE_INDEX = 2
-                                    val PROJECTION_ORGANIZER_INDEX = 3
-
-
-                                    val builder: Uri.Builder =
-                                        CalendarContract.Instances.CONTENT_URI.buildUpon()
-
-                                    // define time range for query
-                                    ContentUris.appendId(builder, epochTimeStart)
-
-                                    ContentUris.appendId(
-                                        builder,
-                                        epochTimeStart + totalDurationMilliseconds
-                                    )
-
-
-                                    val selection = CalendarContract.Instances.ORGANIZER + " = ?"
-                                    val selectionArgs = arrayOf("My calendar")
-
-                                    // Submit the query
-                                    val cur =
-                                        contentResolver.query(
-                                            builder.build(),
-                                            INSTANCE_PROJECTION,
-                                            selection, selectionArgs, null
-                                        )
-
-                                    // if event is found, then there we exit the function
-
-                                    if (cur != null && cur.count > 0) {
-
-                                        while (cur.moveToNext()) {
-
-                                            val eventID = cur.getLong(PROJECTION_ID_INDEX)
-                                            val beginVal = cur.getLong(PROJECTION_BEGIN_INDEX)
-                                            val title = cur.getString(PROJECTION_TITLE_INDEX)
-                                            val organizer =
-                                                cur.getString(PROJECTION_ORGANIZER_INDEX)
-
-
-                                            Log.i(
-                                                "Event found",
-                                                "Event ID: $eventID, Begin: $beginVal, Title: $title, Organizer: $organizer"
-                                            )
-
-
-                                            Toast.makeText(
-                                                this,
-                                                "Event ID: $title is booked for this time",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                            return@StringRequest
-
-                                        }
-                                    }
-
-
-
-                                    binding.textView2Test.text =
-                                        "currentlocation to pickup distance: " + mDistanceMatrix.rows[0].elements[0].distance.text + "\n" + "currentlocation to pickup distance: " + mDistanceMatrix.rows[0].elements[0].duration.text + "\n" + "pickup to destination distance: " + mDistanceMatrix.rows[1].elements[1].distance.text + "\n" + "pickup to destination duration: " + mDistanceMatrix.rows[1].elements[1].duration.text
-
-                                    /*  useful row 0 element 0    currentlocation to pickup distance
-                                    useful   row 0 element 0    currentlocation to pickup duration
-
-                                    useful  row 1 element 1  pickup to destination distance
-                                    useful  row 1 element 1  pickup to destination duration
-
-                                    useless row 1 element 0  currentlocation to des distance
-                                    useless row 1 element 0  currentlocation to pickup duration
-
-                                    useful row 0 element 1    pickup to pickup distance
-                                    useful row 0 element 1    pickup to pickup duration */
-
                                     // total distance uses return text of distance splits it at the space delimiter and takes the first element and parses it into a double
 
                                     val totalDistance =
@@ -398,76 +431,24 @@ class AppointmentActivity : AppCompatActivity() {
                                             " "
                                         )[0].toDouble()
 
-                                    // totalduration is the sum of the duration between currentlocation to pickup and pickup to destination. Value property is in seconds.
-
-
-                                    Log.i(TAG, totalDistance.toString())
-                                    Log.i(TAG, totalDurationMilliseconds.toString())
-
+                                    // totalCost can be truncated to 2 decimal places like this because it's only an estimate
 
                                     val totalCost = "%.2f".format(
                                         totalDistance * retrieveRate.toString().toDouble()
                                     )
 
-                                    Log.i(TAG, totalCost)
 
-
-                                    // less user friendly
-
-                                    /*      val cr = contentResolver
-                                            val values = ContentValues()
-                                            values.put(CalendarContract.Events.DTSTART, epochTimeStart)
-                                            values.put(CalendarContract.Events.DTEND,  epochTimeStart + totalDurationMilliseconds)
-                                            values.put(CalendarContract.Events.TITLE,  "Appointment for $clientName")
-                                            values.put(CalendarContract.Events.DESCRIPTION,  "Estimated fare for the job: £$totalCost + Duration of job: $totalDurationMilliseconds ms" )
-                                            values.put(
-                                                CalendarContract.Events.ORGANIZER,
-                                                "joe"
-                                            )
-                                            values.put(
-                                                CalendarContract.Events.EVENT_LOCATION,
-                                                pickup
-                                            )
-                                            values.put(CalendarContract.Events.CALENDAR_ID, 1)
-                                            values.put(CalendarContract.Events.EVENT_TIMEZONE, "London/UK")
-                                            values.put(CalendarContract.Events.AVAILABILITY, CalendarContract.Events.AVAILABILITY_BUSY)
-
-                                            val uri = cr.insert(CalendarContract.Events.CONTENT_URI, values) */
-
-                                    val intent = Intent(Intent.ACTION_INSERT)
-                                        .setData(CalendarContract.Events.CONTENT_URI)
-                                        .putExtra(
-                                            CalendarContract.EXTRA_EVENT_BEGIN_TIME,
-                                            epochTimeStart
-                                        )
-                                        .putExtra(
-                                            CalendarContract.EXTRA_EVENT_END_TIME,
-                                            epochTimeStart + totalDurationMilliseconds
-                                        )
-                                        .putExtra(
-                                            CalendarContract.Events.TITLE,
-                                            "Appointment for $clientName"
-                                        )
-
-                                        //why are these reversed???
-                                        .putExtra(
-                                            CalendarContract.Events.DESCRIPTION,
-                                            pickup
-                                        )
-                                        .putExtra(
-                                            CalendarContract.Events.EVENT_LOCATION,
-                                            "Estimated fare for the job: £$totalCost + Duration of job: $totalDurationMilliseconds ms"
-                                        )
-                                    startActivity(intent)
-
+                                    calendarInsert(
+                                        epochTimeStart,
+                                        totalDurationMilliseconds,
+                                        clientName,
+                                        pickup,
+                                        destination,
+                                        totalCost
+                                    )
 
 
                                 } catch (e: Throwable) {
-
-                                    Log.e(TAG, e.toString())
-
-                                    binding.textView2Test.text = e.toString()
-
 
                                     val text = "An API error has occurred"
                                     val duration = Toast.LENGTH_SHORT
@@ -486,6 +467,8 @@ class AppointmentActivity : AppCompatActivity() {
                     } else {
 
                         this.title = "A location error has occurred"
+                        Toast.makeText(this, "A location error has occurred", Toast.LENGTH_SHORT)
+                            .show()
 
                     }
 
@@ -494,8 +477,8 @@ class AppointmentActivity : AppCompatActivity() {
 
         } else {
 
-            binding.textView2Test.text =
-                "Please turn on location"
+
+            Toast.makeText(this, "Please turn on location", Toast.LENGTH_SHORT).show()
 
         }
 
@@ -522,62 +505,26 @@ class AppointmentActivity : AppCompatActivity() {
                     pickupID = place.id
                     pickup = place.name
 
-
-
-                    Log.i(TAG, "Place1: ${pickup}, ${place.id}")
-
                 } else {
 
                     destinationID = place.id
                     destination = place.name
 
-                    Log.i(TAG, "Place2: ${destination}, ${place.id}")
 
                 }
 
             }
 
             override fun onError(status: Status) {
+// needs to be implemented but not used
 
-                Log.i(TAG, "An error occurred: $status")
+
             }
 
         })
 
     }
 
-    fun submitBtnOnClick(view: View) {
-
-        clientName = binding.editTextTextPersonName.text.toString()
-
-        if (clientName == "" || pickup == "" || destination == "") {
-
-            val text = "Please fill in all fields"
-            val duration = Toast.LENGTH_SHORT
-
-            val toast = Toast.makeText(applicationContext, text, duration)
-            toast.show()
-
-            return
-
-        }
-
-
-        if (!permissionCheck()) {
-
-            Toast.makeText(
-                this,
-                "Permissions are denied, please check your app settings",
-                Toast.LENGTH_SHORT
-            ).show()
-
-            return
-
-        }
-
-        requestNewLocationData()
-
-    }
 
     private fun isLocationEnabled(context: Context): Boolean {
 
