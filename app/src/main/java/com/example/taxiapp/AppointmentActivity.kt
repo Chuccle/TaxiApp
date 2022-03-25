@@ -10,12 +10,14 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.location.Location
 import android.location.LocationManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.CalendarContract
 import android.provider.Settings
+import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -36,22 +38,23 @@ import java.util.*
 
 class AppointmentActivity : AppCompatActivity() {
 
+    private val myCalendar: Calendar = Calendar.getInstance()
+
     private var clientName: String? = null
 
-    var pickupID: String? = null
+    private var pickupID: String? = null
 
-    var pickup: String? = null
+    private var pickup: String? = null
 
-    var destinationID: String? = null
+    private var destinationID: String? = null
 
-    var destination: String? = null
+    private var destination: String? = null
 
     private lateinit var binding: ActivityAppointmentBinding
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
 
-    private val myCalendar: Calendar = Calendar.getInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -73,7 +76,6 @@ class AppointmentActivity : AppCompatActivity() {
 
         val dateStart =
             DatePickerDialog.OnDateSetListener { view, year, monthOfYear, dayOfMonth ->
-
 
                 binding.textViewDateField.text =
                     resources.getString(
@@ -104,13 +106,9 @@ class AppointmentActivity : AppCompatActivity() {
 
         }
 
-
         val timeStart =
             OnTimeSetListener { view, hourOfDay, minute ->
-
-
                 //switch case to auto-format the time fields in a consistent way
-
                 when {
 
                     hourOfDay < 10 && minute < 10 -> {
@@ -131,6 +129,7 @@ class AppointmentActivity : AppCompatActivity() {
 
                         binding.textViewTimeField.text =
                             resources.getString(R.string.timeFieldTemplate3, hourOfDay, minute)
+
                     }
 
                     else -> {
@@ -144,7 +143,6 @@ class AppointmentActivity : AppCompatActivity() {
 
                 myCalendar.set(Calendar.HOUR_OF_DAY, hourOfDay)
                 myCalendar.set(Calendar.MINUTE, minute)
-
 
             }
 
@@ -169,19 +167,18 @@ class AppointmentActivity : AppCompatActivity() {
             )
 
                 .show()
+
         }
 
         binding.btnSubmit.setOnClickListener {
 
             clientName = binding.editTextTextPersonName.text.toString()
 
+            // Check for empty fields
             if (clientName == "" || pickup == "" || destination == "") {
 
-                val text = "Please fill in all fields"
-                val duration = Toast.LENGTH_SHORT
-
-                val toast = Toast.makeText(applicationContext, text, duration)
-                toast.show()
+                Toast.makeText(applicationContext, "Please fill in all fields", Toast.LENGTH_SHORT)
+                    .show()
 
                 return@setOnClickListener
 
@@ -206,51 +203,37 @@ class AppointmentActivity : AppCompatActivity() {
 
     }
 
+
     private fun permissionCheck(): Boolean {
 
         //If any of the listed permissions are not granted then the function returns false
+        return !(ActivityCompat.checkSelfPermission(
+            this,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_DENIED || ActivityCompat.checkSelfPermission(
+            this,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_DENIED || ActivityCompat.checkSelfPermission(
+            this,
+            Manifest.permission.WRITE_CALENDAR
+        ) == PackageManager.PERMISSION_DENIED || ActivityCompat.checkSelfPermission(
+            this,
+            Manifest.permission.READ_CALENDAR
+        ) == PackageManager.PERMISSION_DENIED)
 
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_DENIED || ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) == PackageManager.PERMISSION_DENIED || ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.WRITE_CALENDAR
-            ) == PackageManager.PERMISSION_DENIED || ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.READ_CALENDAR
-            ) == PackageManager.PERMISSION_DENIED
-
-
-        ) {
-
-
-            return false
-        }
-
-        return true
     }
-
-
     private fun calendarInsert(
-        epochTimeStart: Long,
         totalDurationMilliseconds: Int,
-        clientName: String?,
-        pickup: String?,
-        destination: String?,
         totalCost: String
     ) {
 
+        // declare and assign variable from our calendar instance and use time in milliseconds method to get epoch format
+        val epochTimeStart = myCalendar.timeInMillis
 
         //This will go through the users calendars and from the calculated time range of the proposed event
         // and work out if it conflicts with any existing events
 
         // Projection array.
-
-
         val INSTANCE_PROJECTION = arrayOf(
             CalendarContract.Instances.EVENT_ID,      // 0
             CalendarContract.Instances.BEGIN,         // 1
@@ -275,8 +258,7 @@ class AppointmentActivity : AppCompatActivity() {
             epochTimeStart + totalDurationMilliseconds
         )
 
-// define selection criteria, we don't want system events to count
-
+        // define selection criteria, we don't want system events to count
         val selection = CalendarContract.Instances.ORGANIZER + " = ?"
         val selectionArgs = arrayOf("My calendar")
 
@@ -289,7 +271,6 @@ class AppointmentActivity : AppCompatActivity() {
             )
 
         // if event is found, then there we exit the function
-
         if (cur != null && cur.count > 0) {
 
             while (cur.moveToNext()) {
@@ -314,8 +295,7 @@ class AppointmentActivity : AppCompatActivity() {
         }
 
 
-// This intent uses the supplied arguments to create a new calendar event
-
+        // This intent uses the supplied arguments to create a new calendar event
         val intent = Intent(Intent.ACTION_INSERT)
 
             .setData(CalendarContract.Events.CONTENT_URI)
@@ -374,123 +354,143 @@ class AppointmentActivity : AppCompatActivity() {
     }
 
 
-    @SuppressLint("MissingPermission")
-    private fun requestNewLocationData() {
+    private fun apiHandler(location: Location) {
 
-        val epochTimeStart = myCalendar.timeInMillis
+        // bug if user wipes cache and then re-enters the app, RetrieveRate will be "" and cause a number-format exception
 
-//shared preferences stores our preferences in local storage and retrieved here
-
+        // create new shared preferences instance and retrieve the rate from the shared preferences
         val sharedPreferences: SharedPreferences =
             getSharedPreferences("MySharedPref", MODE_PRIVATE)
 
-        val retrieveUnit = sharedPreferences.getString("unit:", "")
-
         val retrieveRate = sharedPreferences.getString("rate:", "")
 
+        val retrieveUnit = sharedPreferences.getString("unit:", "")
+
+
+        // create a volley request queue
+        val queue = Volley.newRequestQueue(this)
+
+        //Create our API URL from our parameters, since form is validated we can assume that the user's input is handled correctly so parameterization isn't necessary
+        val url =
+            "https://maps.googleapis.com/maps/api/distancematrix/json?units=${retrieveUnit.toString()}&origins=${location.latitude.toString() + "," + location.longitude.toString()}|place_id:$pickupID&destinations=place_id:$pickupID|place_id:$destinationID&key=${
+                resources.getString(
+                    R.string.api_key
+                )
+            }"
+
+        val stringRequest = StringRequest(
+            Request.Method.GET, url,
+            { response ->
+
+                Log.i("TEST", response.toString())
+                this.title = "Results"
+
+                // Create our handler instance for the response
+                val gson = Gson()
+
+
+                // We assign the response to our DistanceMatrixRoot data class
+                val mDistanceMatrix =
+                    gson.fromJson(response, DistanceMatrixRoot::class.java)
+
+                // Check if the response is valid
+                if (mDistanceMatrix.status == "OK") {
+
+                    // Total Duration milliseconds gathered from adding two parts of the matrix's values and which are recorded in seconds by Google
+                    // we multiply for 1000 to convert to milliseconds
+                    val totalDurationMilliseconds =
+                        (mDistanceMatrix.rows[0].elements[0].duration.value + mDistanceMatrix.rows[1].elements[1].duration.value) * 1000
+
+
+                    // total distance uses return text of distance splits it at the space delimiter and takes the first element and parses it into a double
+                    val totalDistance =
+                        mDistanceMatrix.rows[0].elements[0].distance.text.split(" ")[0].toDouble() + mDistanceMatrix.rows[1].elements[1].distance.text.split(
+                            " "
+                        )[0].toDouble()
+
+                    // totalCost can be truncated to 2 decimal places like this because it's only an estimate
+                    val totalCost = "%.2f".format(
+                        (totalDistance * retrieveRate.toString().toDouble())
+                    )
+
+                    // We pass the values to our next function
+                    calendarInsert(totalDurationMilliseconds, totalCost)
+
+                } else {
+
+                    this.title = "That didn't work!"
+
+                    Toast.makeText(
+                        applicationContext,
+                        "An API error has occurred",
+                        Toast.LENGTH_SHORT
+                    ).show()
+
+                }
+
+            },
+
+            { error ->
+
+                // Log.i("TEST", error.toString())
+
+                this.title = "That didn't work!"
+
+                Toast.makeText(
+                    applicationContext,
+                    "A communication error has occurred",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+            })
+
+        queue.add(stringRequest)
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun requestNewLocationData() {
 
         if (isLocationEnabled(this)) {
 
+            // used built in location manager to get the location
             fusedLocationClient.lastLocation
                 .addOnSuccessListener { location ->
+
                     if (location != null) {
-                        // use your location object
 
-                        // get latitude , longitude and other info from this
-
-                        val queue = Volley.newRequestQueue(this)
-
-                        val url =
-                            "https://maps.googleapis.com/maps/api/distancematrix/json?units=${retrieveUnit.toString()}&origins=${location.latitude.toString() + "," + location.longitude.toString()}|place_id:$pickupID&destinations=place_id:$pickupID|place_id:$destinationID&key=${
-                                resources.getString(
-                                    R.string.api_key
-                                )
-                            }"
-
-                        val stringRequest = StringRequest(
-                            Request.Method.GET, url,
-                            { response ->
-
-                                this.title = "Results"
-
-                                val gson = Gson()
-
-                                try {
-
-                                    val mDistanceMatrix =
-                                        gson.fromJson(response, DistanceMatrixRoot::class.java)
-
-                                    val totalDurationMilliseconds =
-                                        (mDistanceMatrix.rows[0].elements[0].duration.value + mDistanceMatrix.rows[1].elements[1].duration.value) * 1000
-
-
-                                    // total distance uses return text of distance splits it at the space delimiter and takes the first element and parses it into a double
-
-                                    val totalDistance =
-                                        mDistanceMatrix.rows[0].elements[0].distance.text.split(" ")[0].toDouble() + mDistanceMatrix.rows[1].elements[1].distance.text.split(
-                                            " "
-                                        )[0].toDouble()
-
-                                    // totalCost can be truncated to 2 decimal places like this because it's only an estimate
-
-                                    val totalCost = "%.2f".format(
-                                        totalDistance * retrieveRate.toString().toDouble()
-                                    )
-
-
-                                    calendarInsert(
-                                        epochTimeStart,
-                                        totalDurationMilliseconds,
-                                        clientName,
-                                        pickup,
-                                        destination,
-                                        totalCost
-                                    )
-
-
-                                } catch (e: Throwable) {
-
-                                    val text = "An API error has occurred"
-                                    val duration = Toast.LENGTH_SHORT
-
-                                    val toast = Toast.makeText(applicationContext, text, duration)
-                                    toast.show()
-
-                                }
-
-                            },
-
-                            { this.title = "That didn't work!" })
-
-                        queue.add(stringRequest)
+                        apiHandler(location)
 
                     } else {
 
                         this.title = "A location error has occurred"
-                        Toast.makeText(this, "A location error has occurred", Toast.LENGTH_SHORT)
+
+                        Toast.makeText(
+                            this,
+                            "A location error has occurred",
+                            Toast.LENGTH_SHORT
+                        )
                             .show()
 
                     }
 
-
                 }
 
         } else {
-
 
             Toast.makeText(this, "Please turn on location", Toast.LENGTH_SHORT).show()
 
         }
 
         return
+
     }
 
     private fun autocompleteLogic(autocompleteID: Int) {
         // Initialize the AutocompleteSupportFragment.
-        val autocompleteFragment =
-            supportFragmentManager.findFragmentById(autocompleteID)
-                    as AutocompleteSupportFragment
+        val autocompleteFragment = supportFragmentManager.findFragmentById(autocompleteID)
+                as AutocompleteSupportFragment
 
+        //  Specify the region to restrict predictions to.
         autocompleteFragment.setCountry("UK")
 
         // Specify the types of place data to return.
@@ -498,16 +498,22 @@ class AppointmentActivity : AppCompatActivity() {
 
         // Set up a PlaceSelectionListener to handle the response.
         autocompleteFragment.setOnPlaceSelectedListener(object : PlaceSelectionListener {
+
             override fun onPlaceSelected(place: Place) {
 
+                // Allows us to reuse this for both autocomplete text fields
                 if (autocompleteID == R.id.autocomplete_fragment1) {
 
+                    //  Use ID for API as it is ensure a unique place
                     pickupID = place.id
+
+                    // the place.name is for the display names
                     pickup = place.name
 
                 } else {
 
                     destinationID = place.id
+
                     destination = place.name
 
 
@@ -516,7 +522,8 @@ class AppointmentActivity : AppCompatActivity() {
             }
 
             override fun onError(status: Status) {
-// needs to be implemented but not used
+
+                // needs to be implemented but not used
 
 
             }
@@ -530,17 +537,19 @@ class AppointmentActivity : AppCompatActivity() {
 
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             // This is a new method provided in API 28
+
             val lm = context.getSystemService(LOCATION_SERVICE) as LocationManager
 
             lm.isLocationEnabled
 
-
         } else {
             // This was deprecated in API 28
             val mode: Int =
-                Settings.Secure.getInt(context.contentResolver, Settings.Secure.LOCATION_MODE,
+                Settings.Secure.getInt(
+                    context.contentResolver, Settings.Secure.LOCATION_MODE,
 
-                    Settings.Secure.LOCATION_MODE_OFF)
+                    Settings.Secure.LOCATION_MODE_OFF
+                )
 
             mode != Settings.Secure.LOCATION_MODE_OFF
 

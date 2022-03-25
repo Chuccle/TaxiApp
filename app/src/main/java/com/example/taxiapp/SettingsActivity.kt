@@ -48,7 +48,7 @@ class SettingsActivity : AppCompatActivity() {
             if (isMetric) {
 
                 binding.textViewPricePerUnit.text = resources.getString(R.string.kmRateTitle)
-
+                //Mathematical operation to convert miles to km
                 dEditText *= 0.6213712
 
                 binding.editTextRate.setText(
@@ -62,9 +62,8 @@ class SettingsActivity : AppCompatActivity() {
 
             } else {
 
-
                 binding.textViewPricePerUnit.text = resources.getString(R.string.miRateTitle)
-
+                //Mathematical operation to convert km to miles
                 dEditText *= 1.609344
 
                 binding.editTextRate.setText(
@@ -82,9 +81,9 @@ class SettingsActivity : AppCompatActivity() {
 
         binding.buttonSave.setOnClickListener {
 
-// Storing the key and its value as the data fetched from edittext
+            // Storing the key and its value as the data fetched from edittext
             myEdit.putString("rate:", binding.editTextRate.text.toString())
-
+            //commit the changes
             myEdit.apply()
 
         }
