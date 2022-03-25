@@ -6,7 +6,7 @@
     <string name="second_fragment_label">Second Fragment</string>
     <string name="next">Next</string>
     <string name="previous">Previous</string>
-    <string name="api_key">AIzaSyAIDSxZPLXHCQ7zlEltXe85dHqTlSOtlCo</string>
+    <string name="api_key">YOUR_GOOGLE_API_KEY</string>
     <string name="fire">fire</string>
     <string name="cancel">cancel</string>
     <string name="appointment">Appointment</string>
