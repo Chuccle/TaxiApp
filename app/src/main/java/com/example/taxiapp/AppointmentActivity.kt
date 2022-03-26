@@ -64,6 +64,15 @@ class AppointmentActivity : AppCompatActivity() {
 
         Places.initialize(applicationContext, resources.getString(R.string.api_key))
 
+        val sharedPreferences: SharedPreferences =
+            getSharedPreferences("MySharedPref", MODE_PRIVATE)
+
+        val retrieveRate = sharedPreferences.getString("rate:", "")
+
+        val retrieveUnit = sharedPreferences.getString("unit:", "")
+
+        Log.i("retrieveRate", retrieveRate.toString())
+        Log.i("retrieveUnit", retrieveUnit.toString())
 
         // Create a new PlacesClient instance
         Places.createClient(this)
@@ -362,10 +371,9 @@ class AppointmentActivity : AppCompatActivity() {
         val sharedPreferences: SharedPreferences =
             getSharedPreferences("MySharedPref", MODE_PRIVATE)
 
-        val retrieveRate = sharedPreferences.getString("rate:", "")
+        var retrieveRate = sharedPreferences.getString("rate:", "")
 
-        val retrieveUnit = sharedPreferences.getString("unit:", "")
-
+        var retrieveUnit = sharedPreferences.getString("unit:", "")
 
         // create a volley request queue
         val queue = Volley.newRequestQueue(this)

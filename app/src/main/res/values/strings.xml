@@ -6,12 +6,11 @@
     <string name="second_fragment_label">Second Fragment</string>
     <string name="next">Next</string>
     <string name="previous">Previous</string>
-    <string name="api_key">YOUR_GOOGLE_API_KEY</string>
+    <string name="api_key">YOUR_API_KEY</string>
     <string name="fire">fire</string>
     <string name="cancel">cancel</string>
     <string name="appointment">Appointment</string>
     <string name="calender">Calender</string>
-    <string name="rate_per_mile">Rate per Mile</string>
     <string name="switch_units">Switch units</string>
     <string name="_0_00">0.00</string>
     <string name="save">Save</string>

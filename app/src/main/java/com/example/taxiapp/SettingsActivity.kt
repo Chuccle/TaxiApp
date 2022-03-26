@@ -1,6 +1,7 @@
 package com.example.taxiapp
 
 
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.widget.CompoundButton
 import android.widget.Switch
@@ -15,7 +16,8 @@ class SettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val sharedPreferences = getSharedPreferences("MySharedPref", MODE_PRIVATE)
+        val sharedPreferences: SharedPreferences =
+            getSharedPreferences("MySharedPref", MODE_PRIVATE)
 
         val myEdit = sharedPreferences.edit()
 
@@ -26,9 +28,14 @@ class SettingsActivity : AppCompatActivity() {
         setContentView(binding.root)
 
 
+        // we assign the value to what exists in the shared preferences otherwise it will be 0.00
         if (sharedPreferences.getString("rate:", "") != "") {
 
             binding.editTextRate.setText(sharedPreferences.getString("rate:", ""))
+
+        } else {
+
+            binding.editTextRate.setText(resources.getString(R.string._0_00))
 
         }
 
@@ -36,19 +43,49 @@ class SettingsActivity : AppCompatActivity() {
         val switchUnit = findViewById<Switch>(R.id.switchUnit)
 
 
-        switchUnit.isChecked = sharedPreferences.getString("unit:", "") == "metric"
+        // we assign the position of the switch based on the value of unit in shared preferences, we also assign the value to the textview
+        // we also input the value into the shared preferences editor so that it can be saved without a switch event
+        if (sharedPreferences.getString("unit:", "") == "metric") {
+
+            switchUnit.isChecked = true
+
+            binding.textViewPricePerUnit.text = resources.getString(R.string.kmRateTitle)
+
+            myEdit.putString("unit:", "metric")
+
+        } else {
+
+            switchUnit.isChecked = false
+
+            binding.textViewPricePerUnit.text = resources.getString(R.string.miRateTitle)
+
+            myEdit.putString("unit:", "imperial")
+
+        }
 
 
-        switchUnit.setOnCheckedChangeListener { _: CompoundButton?, isMetric: Boolean ->
+        switchUnit.setOnCheckedChangeListener { _: CompoundButton?, isChecked: Boolean ->
 
 
-            var dEditText = binding.editTextRate.text.toString().toDouble()
+            // We parse the value of the edit text and assigning it to a variable
+            // We need the try-catch because if the value of our edittext is empty we will get an error
+            var dEditText = try {
+
+                binding.editTextRate.text.toString().toDouble()
+
+            } catch (e: Exception) {
+                0.00
+            }
 
 
-            if (isMetric) {
+            // We perform the conversion of dEditText based on when the unit is swapped from either metric or imperial
+            // We also set the Shared Preferences editor to the corresponding unit
+            if (isChecked) {
 
                 binding.textViewPricePerUnit.text = resources.getString(R.string.kmRateTitle)
                 //Mathematical operation to convert miles to km
+
+
                 dEditText *= 0.6213712
 
                 binding.editTextRate.setText(
@@ -87,6 +124,26 @@ class SettingsActivity : AppCompatActivity() {
             myEdit.apply()
 
         }
+    }
+
+
+    // We trap the user inside this activity until we have a rate and unit
+    override fun onBackPressed() {
+
+        val sharedPreferences: SharedPreferences =
+            getSharedPreferences("MySharedPref", MODE_PRIVATE)
+
+        if (sharedPreferences.getString("rate:", "") != "" && sharedPreferences.getString(
+                "unit:",
+                ""
+            ) != ""
+        ) {
+
+            super.onBackPressed()
+
+        }
+
+
     }
 
 }
