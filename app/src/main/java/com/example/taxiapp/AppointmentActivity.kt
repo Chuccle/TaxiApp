@@ -17,7 +17,6 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.CalendarContract
 import android.provider.Settings
-import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -63,16 +62,6 @@ class AppointmentActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         Places.initialize(applicationContext, resources.getString(R.string.api_key))
-
-        val sharedPreferences: SharedPreferences =
-            getSharedPreferences("MySharedPref", MODE_PRIVATE)
-
-        val retrieveRate = sharedPreferences.getString("rate:", "")
-
-        val retrieveUnit = sharedPreferences.getString("unit:", "")
-
-        Log.i("retrieveRate", retrieveRate.toString())
-        Log.i("retrieveUnit", retrieveUnit.toString())
 
         // Create a new PlacesClient instance
         Places.createClient(this)
@@ -184,16 +173,37 @@ class AppointmentActivity : AppCompatActivity() {
             clientName = binding.editTextTextPersonName.text.toString()
 
             // Check for empty fields
-            if (clientName == "" || pickup == "" || destination == "") {
+            when {
 
-                Toast.makeText(applicationContext, "Please fill in all fields", Toast.LENGTH_SHORT)
-                    .show()
+                binding.editTextTextPersonName.text.isEmpty() -> {
 
-                return@setOnClickListener
+                    Toast.makeText(this, "Please enter your name", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+
+                binding.textViewDateField.text == resources.getString(R.string._00_00_0000) -> {
+
+                    Toast.makeText(this, "Please enter a date", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+
+
+                pickup == null -> {
+
+                    Toast.makeText(this, "Please enter a pickup location", Toast.LENGTH_SHORT)
+                        .show()
+                    return@setOnClickListener
+                }
+
+                destination == null -> {
+
+                    Toast.makeText(this, "Please enter a destination location", Toast.LENGTH_SHORT)
+                        .show()
+                    return@setOnClickListener
+
+                }
 
             }
-
-
             if (!permissionCheck()) {
 
                 Toast.makeText(
@@ -390,7 +400,6 @@ class AppointmentActivity : AppCompatActivity() {
             Request.Method.GET, url,
             { response ->
 
-                Log.i("TEST", response.toString())
                 this.title = "Results"
 
                 // Create our handler instance for the response
