@@ -1,9 +1,7 @@
 package com.example.taxiapp
 
 
-import android.content.ContentValues.TAG
 import android.os.Bundle
-import android.util.Log
 import android.widget.CompoundButton
 import android.widget.Switch
 import androidx.appcompat.app.AppCompatActivity
@@ -28,51 +26,52 @@ class SettingsActivity : AppCompatActivity() {
         setContentView(binding.root)
 
 
+        if (sharedPreferences.getString("rate:", "") != "") {
+
             binding.editTextRate.setText(sharedPreferences.getString("rate:", ""))
 
+        }
 
-// needs to initialised
-       // var dEditText: Double
 
-        var switchUnit = findViewById<Switch>(R.id.switchUnit)
+        val switchUnit = findViewById<Switch>(R.id.switchUnit)
 
 
         switchUnit.isChecked = sharedPreferences.getString("unit:", "") == "metric"
 
 
-        switchUnit.setOnCheckedChangeListener { _: CompoundButton?, isMetric:Boolean ->
+        switchUnit.setOnCheckedChangeListener { _: CompoundButton?, isMetric: Boolean ->
 
-         var dEditText = try {
 
-                binding.editTextRate.text.toString().toDouble()
+            var dEditText = binding.editTextRate.text.toString().toDouble()
 
-            } catch(e:NumberFormatException) {
-
-                Log.wtf(TAG, e.toString())
-
-                binding.editTextRate.setText("0.00")
-
-             0.00
-
-            }
 
             if (isMetric) {
 
-                binding.textViewPricePerUnit.text = "Rate per Kilometre"
-
+                binding.textViewPricePerUnit.text = resources.getString(R.string.kmRateTitle)
+                //Mathematical operation to convert miles to km
                 dEditText *= 0.6213712
 
-                binding.editTextRate.setText("%.2f".format(dEditText))
+                binding.editTextRate.setText(
+                    resources.getString(
+                        R.string.parameter,
+                        "%.2f".format(dEditText)
+                    )
+                )
 
                 myEdit.putString("unit:", "metric")
 
             } else {
 
-                binding.textViewPricePerUnit.text = "Rate per Mile"
-
+                binding.textViewPricePerUnit.text = resources.getString(R.string.miRateTitle)
+                //Mathematical operation to convert km to miles
                 dEditText *= 1.609344
 
-                binding.editTextRate.setText("%.2f".format(dEditText))
+                binding.editTextRate.setText(
+                    resources.getString(
+                        R.string.parameter,
+                        "%.2f".format(dEditText)
+                    )
+                )
 
                 myEdit.putString("unit:", "imperial")
 
@@ -82,10 +81,10 @@ class SettingsActivity : AppCompatActivity() {
 
         binding.buttonSave.setOnClickListener {
 
-// Storing the key and its value as the data fetched from edittext
+            // Storing the key and its value as the data fetched from edittext
             myEdit.putString("rate:", binding.editTextRate.text.toString())
-
-            myEdit.commit()
+            //commit the changes
+            myEdit.apply()
 
         }
     }

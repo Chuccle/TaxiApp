@@ -7,178 +7,162 @@
     tools:context=".AppointmentActivity">
 
 
-   <TextView
-       android:id="@+id/textViewTimeField"
-       android:layout_width="102dp"
-       android:layout_height="25dp"
-       android:layout_marginTop="36dp"
-       android:text="00:00"
-       android:textAlignment="center"
-       app:layout_constraintEnd_toEndOf="parent"
-       app:layout_constraintHorizontal_bias="0.543"
-       app:layout_constraintStart_toEndOf="@+id/textViewTime"
-       app:layout_constraintTop_toBottomOf="@+id/btnDatePicker" />
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/barrier"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierDirection="start"
+        app:constraint_referenced_ids="textViewName, textViewDate, textViewTime, textViewPickupLocation, textViewDestination"
+        tools:layout_editor_absoluteX="28dp" />
 
-   <fragment
-       android:id="@+id/autocomplete_fragment1"
-       android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"
-       android:layout_width="219dp"
-       android:layout_height="27dp"
-       android:layout_marginStart="16dp"
-       android:layout_marginTop="28dp"
-       android:layout_marginEnd="16dp"
-       app:layout_constraintEnd_toEndOf="parent"
-       app:layout_constraintHorizontal_bias="1.0"
-       app:layout_constraintStart_toStartOf="parent"
-       app:layout_constraintTop_toBottomOf="@+id/btnTimePicker" />
 
-   <TextView
-       android:id="@+id/textViewPickupLocation"
-       android:layout_width="47dp"
-       android:layout_height="23dp"
-       android:layout_marginStart="16dp"
-       android:layout_marginTop="72dp"
-       android:text="Pickup "
-       app:layout_constraintEnd_toStartOf="@+id/autocomplete_fragment1"
-       app:layout_constraintHorizontal_bias="0.495"
-       app:layout_constraintStart_toStartOf="parent"
-       app:layout_constraintTop_toBottomOf="@+id/textViewTime" />
+    <EditText
+        android:id="@+id/editTextTextPersonName"
+        android:layout_width="201dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="60dp"
+        android:ems="10"
+        android:importantForAutofill="no"
+        android:inputType="textPersonName"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.791"
+        app:layout_constraintStart_toEndOf="@+id/textViewName"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="@tools:sample/full_names" />
 
-   <TextView
-       android:id="@+id/textViewDestination"
-       android:layout_width="wrap_content"
-       android:layout_height="wrap_content"
-       android:layout_marginStart="8dp"
-       android:layout_marginTop="80dp"
-       android:text="Destination"
-       app:layout_constraintEnd_toStartOf="@+id/autocomplete_fragment2"
-       app:layout_constraintHorizontal_bias="0.567"
-       app:layout_constraintStart_toStartOf="parent"
-       app:layout_constraintTop_toBottomOf="@+id/textViewPickupLocation" />
+    <TextView
+        android:id="@+id/textViewDate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="28dp"
+        android:layout_marginTop="84dp"
+        android:text="@string/date"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textViewName" />
 
-   <fragment
-       android:id="@+id/autocomplete_fragment2"
-       android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"
-       android:layout_width="219dp"
-       android:layout_height="27dp"
-       android:layout_marginStart="16dp"
-       android:layout_marginTop="72dp"
-       android:layout_marginEnd="16dp"
-       app:layout_constraintEnd_toEndOf="parent"
-       app:layout_constraintHorizontal_bias="1.0"
-       app:layout_constraintStart_toStartOf="parent"
-       app:layout_constraintTop_toBottomOf="@+id/autocomplete_fragment1"
+    <Button
+        android:id="@+id/btnDatePicker"
+        android:layout_width="171dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="8dp"
+        android:text="@string/pick_date"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.732"
+        app:layout_constraintStart_toEndOf="@+id/textViewDate"
+        app:layout_constraintTop_toBottomOf="@+id/textViewDateField" />
 
-       />
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/autocomplete_fragment2"
+        android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"
+        android:layout_width="219dp"
+        android:layout_height="27dp"
+        android:layout_marginTop="80dp"
+        android:layout_marginEnd="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.835"
 
-   <Button
-       android:id="@+id/btnSubmit"
-       android:layout_width="wrap_content"
-       android:layout_height="wrap_content"
-       android:onClick="submitBtnOnClick"
-       android:text="Submit "
-       app:layout_constraintBottom_toBottomOf="parent"
-       app:layout_constraintEnd_toEndOf="parent"
-       app:layout_constraintHorizontal_bias="0.471"
-       app:layout_constraintStart_toStartOf="parent"
-       app:layout_constraintTop_toBottomOf="@+id/autocomplete_fragment2"
-       app:layout_constraintVertical_bias="0.379" />
+        app:layout_constraintStart_toEndOf="@+id/textViewDestination"
+        app:layout_constraintTop_toBottomOf="@+id/autocomplete_fragment1"
+        tools:layout="@layout/places_autocomplete_activity" />
 
-   <TextView
-       android:id="@+id/textView2Test"
-       android:layout_width="380dp"
-       android:layout_height="214dp"
-       android:layout_marginStart="16dp"
-       android:layout_marginTop="16dp"
-       android:layout_marginEnd="16dp"
-       android:layout_marginBottom="16dp"
-       android:autoText="true"
-       android:text="TextView"
-       android:textSize="8sp"
-       app:layout_constraintBottom_toTopOf="@+id/autocomplete_fragment1"
-       app:layout_constraintEnd_toEndOf="parent"
-       app:layout_constraintHorizontal_bias="0.0"
-       app:layout_constraintStart_toStartOf="parent"
-       app:layout_constraintTop_toTopOf="parent"
-       app:layout_constraintVertical_bias="0.0" />
+    <TextView
+        android:id="@+id/textViewDateField"
+        android:layout_width="102dp"
+        android:layout_height="25dp"
+        android:layout_marginTop="36dp"
+        android:text="@string/_00_00_0000"
+        android:textAlignment="center"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.666"
+        app:layout_constraintStart_toEndOf="@+id/textViewDate"
+        app:layout_constraintTop_toBottomOf="@+id/editTextTextPersonName" />
 
-   <EditText
-       android:id="@+id/editTextTextPersonName"
-       android:layout_width="201dp"
-       android:layout_height="50dp"
-       android:layout_marginTop="88dp"
-       android:ems="10"
-       android:inputType="textPersonName"
-       app:layout_constraintEnd_toEndOf="parent"
-       app:layout_constraintHorizontal_bias="0.838"
-       app:layout_constraintStart_toStartOf="parent"
-       app:layout_constraintTop_toTopOf="parent"
-       tools:text="@tools:sample/full_names" />
+    <Button
+        android:id="@+id/btnTimePicker"
+        android:layout_width="171dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="8dp"
+        android:text="@string/pick_time"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.726"
+        app:layout_constraintStart_toEndOf="@+id/textViewTime"
+        app:layout_constraintTop_toBottomOf="@+id/textViewTimeField" />
 
-   <TextView
-       android:id="@+id/textViewName"
-       android:layout_width="wrap_content"
-       android:layout_height="wrap_content"
-       android:layout_marginTop="100dp"
-       android:text="Name"
-       app:layout_constraintEnd_toStartOf="@+id/editTextTextPersonName"
-       app:layout_constraintHorizontal_bias="0.585"
-       app:layout_constraintStart_toStartOf="parent"
-       app:layout_constraintTop_toTopOf="parent" />
+    <Button
+        android:id="@+id/btnSubmit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
 
-   <TextView
-       android:id="@+id/textViewDate"
-       android:layout_width="wrap_content"
-       android:layout_height="wrap_content"
-       android:layout_marginStart="84dp"
-       android:layout_marginTop="76dp"
-       android:text="Date"
-       app:layout_constraintStart_toStartOf="parent"
-       app:layout_constraintTop_toBottomOf="@+id/textViewName" />
+        android:text="@string/submit"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/autocomplete_fragment2"
+        app:layout_constraintVertical_bias="0.598" />
 
-   <TextView
-       android:id="@+id/textViewTime"
-       android:layout_width="wrap_content"
-       android:layout_height="wrap_content"
-       android:layout_marginStart="72dp"
-       android:layout_marginTop="84dp"
-       android:text="Time"
-       app:layout_constraintStart_toStartOf="parent"
-       app:layout_constraintTop_toBottomOf="@+id/textViewDate" />
+    <TextView
+        android:id="@+id/textViewTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="28dp"
+        android:layout_marginTop="96dp"
+        android:text="@string/time"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textViewDate" />
 
-   <Button
-       android:id="@+id/btnDatePicker"
-       android:layout_width="171dp"
-       android:layout_height="47dp"
-       android:layout_marginTop="8dp"
-       android:text="Pick Date"
-       app:layout_constraintEnd_toEndOf="parent"
-       app:layout_constraintHorizontal_bias="0.562"
-       app:layout_constraintStart_toEndOf="@+id/textViewDate"
-       app:layout_constraintTop_toBottomOf="@+id/textViewDateField" />
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/autocomplete_fragment1"
+        android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"
+        android:layout_width="219dp"
+        android:layout_height="27dp"
+        android:layout_marginTop="60dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.751"
+        app:layout_constraintStart_toEndOf="@+id/textViewPickupLocation"
+        app:layout_constraintTop_toBottomOf="@+id/btnTimePicker"
+        tools:layout="@layout/places_autocomplete_activity" />
 
-   <TextView
-       android:id="@+id/textViewDateField"
-       android:layout_width="102dp"
-       android:layout_height="25dp"
-       android:layout_marginTop="32dp"
-       android:text="00/00/0000"
-       android:textAlignment="center"
-       app:layout_constraintEnd_toEndOf="@+id/textView2Test"
-       app:layout_constraintHorizontal_bias="0.588"
-       app:layout_constraintStart_toEndOf="@+id/textViewDate"
-       app:layout_constraintTop_toBottomOf="@+id/editTextTextPersonName" />
+    <TextView
+        android:id="@+id/textViewDestination"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="28dp"
+        android:layout_marginTop="88dp"
+        android:text="@string/destination"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textViewPickupLocation" />
 
-   <Button
-       android:id="@+id/btnTimePicker"
-       android:layout_width="171dp"
-       android:layout_height="48dp"
-       android:layout_marginTop="8dp"
-       android:text="pick time"
-       app:layout_constraintEnd_toEndOf="parent"
-       app:layout_constraintHorizontal_bias="0.588"
-       app:layout_constraintStart_toEndOf="@+id/textViewTime"
-       app:layout_constraintTop_toBottomOf="@+id/textViewTimeField" />
+    <TextView
+        android:id="@+id/textViewTimeField"
+        android:layout_width="102dp"
+        android:layout_height="25dp"
+        android:layout_marginTop="36dp"
+        android:text="@string/_00_00"
+        android:textAlignment="center"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.662"
+        app:layout_constraintStart_toEndOf="@+id/textViewTime"
+        app:layout_constraintTop_toBottomOf="@+id/btnDatePicker" />
+
+    <TextView
+        android:id="@+id/textViewName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="28dp"
+        android:layout_marginTop="76dp"
+        android:text="@string/name"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/textViewPickupLocation"
+        android:layout_width="47dp"
+        android:layout_height="23dp"
+        android:layout_marginStart="28dp"
+        android:layout_marginTop="92dp"
+        android:text="@string/pickup"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textViewTime" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
