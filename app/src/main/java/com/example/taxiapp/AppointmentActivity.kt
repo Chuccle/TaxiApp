@@ -26,7 +26,9 @@ import com.android.volley.toolbox.Volley
 import com.example.taxiapp.databinding.ActivityAppointmentBinding
 import com.google.android.gms.common.api.Status
 import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment
@@ -381,9 +383,9 @@ class AppointmentActivity : AppCompatActivity() {
         val sharedPreferences: SharedPreferences =
             getSharedPreferences("MySharedPref", MODE_PRIVATE)
 
-        var retrieveRate = sharedPreferences.getString("rate:", "")
+        val retrieveRate = sharedPreferences.getString("rate:", "")
 
-        var retrieveUnit = sharedPreferences.getString("unit:", "")
+        val retrieveUnit = sharedPreferences.getString("unit:", "")
 
         // create a volley request queue
         val queue = Volley.newRequestQueue(this)
@@ -467,18 +469,23 @@ class AppointmentActivity : AppCompatActivity() {
     @SuppressLint("MissingPermission")
     private fun requestNewLocationData() {
 
-        if (isLocationEnabled(this)) {
+        val cts = CancellationTokenSource()
 
+
+
+        if (isLocationEnabled(this)) {
             // used built in location manager to get the location
-            fusedLocationClient.lastLocation
+            fusedLocationClient.getCurrentLocation(PRIORITY_HIGH_ACCURACY, cts.token)
                 .addOnSuccessListener { location ->
 
                     if (location != null) {
 
+                        cts.cancel()
                         apiHandler(location)
 
                     } else {
 
+                        cts.cancel()
                         this.title = "A location error has occurred"
 
                         Toast.makeText(
